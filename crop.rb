@@ -21,7 +21,7 @@ class Crop
 		when 'J'
 			@@display.crop_top -= @step unless @@display.crop_top - @step < 0
 		when 'k'
-			@@display.crop_bottom -= @step unless @@display.crop_top - @step < 0
+			@@display.crop_bottom -= @step unless @@display.crop_bottom - @step < 0
 		when 'K'
 			@@display.crop_bottom += @step
 		when '1'

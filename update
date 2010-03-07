@@ -1,0 +1,22 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'rush'
+require 'image'
+
+local = Rush::Box.new('localhost') 
+home = local['/home/ch/images/images/']
+home['**/*.jpg'].each do |img|
+	unless Image.first(:file => img)
+		if ARGV[0] and ARGV[0] == '-l'
+			puts img
+		else
+			puts "Inserting "+img.to_s
+			image_size = `identify -ping  -format "%[fx:w] %[fx:h]" #{img.to_s}`.split(/\s+/).collect{|i| i.to_i}
+			width = image_size[0].to_i
+			height = image_size[1].to_i
+			image = Image.new(:file => img.to_s, :width => width, :height => height)
+			image.save
+		end
+	end
+end

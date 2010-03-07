@@ -2,13 +2,13 @@ require 'image'
 
 class Display
 
-	attr_accessor :width, :height, :image, :ratio, :img_width, :img_height, :reload, :info, :crop_top, :crop_bottom, :crop_left, :crop_right, :m
+	attr_accessor :width, :height, :image, :ratio, :img_width, :img_height, :reload, :info, :crop_top, :crop_bottom, :crop_left, :crop_right
 
 	def initialize 
 		screen_size = `xrandr | grep '*+'`.split(/\n/).first.sub(/^\s+/,'').split(/\s+/).first.split(/x/).collect{|i| i.to_i}
 		@width = screen_size[0]
 		@height = screen_size[1]
-		@image = Image.last_visited.leafs
+		@image = Image.last_visited.leaves.last
 		@info = true
 		resize
 		reset_crop
@@ -28,24 +28,6 @@ class Display
 		@reload = true
 	end
 
-	def goto(id)
-		@image.root.last = false
-		@image.root.save
-		case @filter
-		when 'deleted'
-			@image = Image.first(:id.gte => id, :parent => nil,  :deleted => true)
-		when 'selected'
-			@image = Image.first(:id.gte => id, :parent => nil,  :selected => true)
-		else
-			@image = Image.first(:id.gte => id, :parent => nil,  :deleted => false)
-		end
-		@image = image.leafs
-		@image.last = true
-		@image.save
-		@@keyboard.navigate
-		resize
-	end
-
 	def filter(condition)
 		case condition
 		when /^d/
@@ -55,11 +37,30 @@ class Display
 		else
 			@filter = ''
 		end
+		goto @image.id
 		@@keyboard.navigate
 	end
 
+	def goto(id)
+		@image.root.last_visited = false
+		@image.root.save
+		case @filter
+		when 'deleted'
+			@image = Image.first(:id.gte => id, :parent => nil,  :deleted => true)
+		when 'selected'
+			@image = Image.first(:id.gte => id, :parent => nil,  :selected => true)
+		else
+			@image = Image.first(:id.gte => id, :parent => nil,  :deleted => false)
+		end
+		@image = image.leaves.last
+		@image.last_visited = true
+		@image.save
+		@@keyboard.navigate
+		resize
+	end
+
 	def next
-		@image.root.last = false
+		@image.root.last_visited = false
 		@image.root.save
 		id = @image.root.id + 1
 		id = Image.last.id if id > Image.last.id
@@ -71,14 +72,14 @@ class Display
 		else
 			image = Image.first(:id.gte => id,  :parent => nil, :deleted => false)
 		end
-		@image = image.leafs
-		@image.last = true
+		@image = image.leaves.last
+		@image.last_visited = true
 		@image.save
 		resize
 	end
 
 	def previous
-		@image.root.last = false
+		@image.root.last_visited = false
 		@image.root.save
 		id = @image.root.id - 1
 		id = Image.first.id if id < Image.first.id
@@ -90,8 +91,8 @@ class Display
 		else
 			image = Image.last(:id.lte => id, :parent => nil,  :deleted => false)
 		end
-		@image = image.leafs
-		@image.last = true
+		@image = image.leaves.last
+		@image.last_visited = true
 		@image.save
 		resize
 	end

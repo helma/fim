@@ -16,7 +16,7 @@ class Image
 	property :art, Boolean, :default => false
 	property :deleted, Boolean, :default => false
 	#property :history, Text
-	property :last, Boolean, :default => false
+	property :last_visited, Boolean, :default => false
 
 	is :tree, :order => :id
 
@@ -40,24 +40,28 @@ class Image
 		children == []
 	end
 
-	def leafs
-		if children == []
-			self
-		else
-			children.first 
-		end
+	def leaves
+		@level = [self]
+		@leaves = []
+		traverse 
+		@leaves.flatten.compact
 	end
 
-	def root
-		image = self
-		while image.parent
-			image = image.parent
+	def traverse # simple bfs
+		next_level = []
+		@level.each do |i|
+			if i.children == []
+				@leaves << i
+			else 
+				next_level << i.children
+			end
 		end
-		image
-	end
+		@level = next_level.compact
+		traverse unless @level == []
+  end 
 
 	def self.last_visited
-		i = Image.first unless i = Image.first(:last => true)
+		i = Image.first unless i = Image.first(:last_visited => true)
 		i
 	end
 end

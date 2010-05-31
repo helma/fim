@@ -5,7 +5,8 @@ class Display
 	attr_accessor :width, :height, :image, :ratio, :img_width, :img_height, :reload, :info, :crop_top, :crop_bottom, :crop_left, :crop_right
 
 	def initialize 
-		screen_size = `xrandr | grep '*+'`.split(/\n/).first.sub(/^\s+/,'').split(/\s+/).first.split(/x/).collect{|i| i.to_i}
+		screen_size = `xrandr`.split(/\n/).last.sub(/^\s+/,'').split(/\s+/).first.split(/x/).collect{|i| i.to_i}
+		Shoes.debug screen_size.inspect
 		@width = screen_size[0]
 		@height = screen_size[1]
 		@image = Image.last_visited.leaves.last

@@ -1,0 +1,73 @@
+fim
+===
+
+Fast image manager with vi keybindings. If you do not like it you will have to edit the source code or look somewhere else.
+
+INSTALLATION:
+
+Dependencies:
+
+shoes (http://github.com/shoes/)
+xrandr
+jpegtran
+
+USAGE:
+
+1. put your images into ./images/ and run ./update to update the database
+2. start ./fim
+
+fim has 3 modes:
+
+navigate (default):
+
+	navigate and tag images
+
+	"Esc" enters navigate mode
+
+	keybindings:
+
+		j: next image
+		k: previous image
+		g {id}: got image {id}
+		r: rotate image
+
+		tagging (edit image.rb to add/remove tags):
+		s: tag with 'selected'
+		d: tag with 'deleted' (will hide image)
+		a: tag with 'art'
+		p: tag with 'private'
+
+		filtering:
+		f {tag}: show only images with {tag}
+
+crop:
+	crop images
+
+	"c" enters crop mode
+
+	keybindings:
+		
+		h: move left border to the right
+		H: move left border to the left
+		l: move right border to the left
+		L: move right border to the right
+		j: move top border down
+		J: move top border up
+		k: move bottom border up
+		K: move bottom border down
+
+		1: set step size to 1px
+		2: set step size to 10px (default)
+		3: set step size to 100px
+
+		Enter: execute crop
+	
+command:
+
+	enter commands for the fim DSL 
+
+	":" enters command mode
+
+	enter command and return to execute. e.g. goto {id}
+
+"q" exits fim

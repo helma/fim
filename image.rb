@@ -15,7 +15,6 @@ class Image
 	property :private, Boolean, :default => false
 	property :art, Boolean, :default => false
 	property :deleted, Boolean, :default => false
-	#property :history, Text
 	property :last_visited, Boolean, :default => false
 
 	is :tree, :order => :id

@@ -6,7 +6,7 @@ class Keyboard
 
 	attr_accessor :display, :reload
 
-	def initialize#(display)
+	def initialize
 		@mode = Navigate.new
 		@reload = true
 	end
@@ -35,7 +35,7 @@ class Keyboard
 		when 'g'
 			@mode = Command.new 'goto '
 		when 'f'
-			@mode = Command.new	'filter '
+			@mode = Command.new 'filter '
 		when 'c'
 			@mode = Crop.new
 		when 'q'

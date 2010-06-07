@@ -1,4 +1,5 @@
-require 'navigate'
+require 'index'
+require 'show'
 require 'command'
 require 'crop'
 
@@ -7,7 +8,7 @@ class Keyboard
 	attr_accessor :display, :reload
 
 	def initialize
-		@mode = Navigate.new
+		@mode = Index.new
 		@reload = true
 	end
 
@@ -20,13 +21,19 @@ class Keyboard
 	end
 
 	def navigate
-		@mode = Navigate.new
+		@mode = Show.new
+	end
+
+	def index
+		@mode = Index.new
 	end
 
 	def handle(k)
 		case k
 		when :escape # togle input mode
-			@mode = Navigate.new
+			@mode = Index.new
+		when "\n"
+			@mode = Show.new
 		when 'i'
 			@@display.info = !@@display.info
 			@@display.reload = true

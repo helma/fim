@@ -20,19 +20,14 @@ class Image
 	is :tree, :order => :id
 
 	def info
-		tags = ''
-		tags += ', selected' if @selected
-		tags += ', private' if @private
-		tags += ', art' if @art
-		tags += ', history' if @history
-		tags += ", parent: #{parent.file}" if parent
-		unless leaf?
-			tags += ', children: '
-			children.each do |child|
-				tags += child.file
-			end
+		info  = "#{id}/#{Image.last.id}: "
+		info += "#{ancestors.collect{|a| a.file}.join("->")}->" if parent
+		info += file + " [" + @width.to_s + 'x' + @height.to_s + "] "
+		["selected","private","art"].each do |t|
+			eval "info += ', #{t}' if @#{t}" 
 		end
-		"#{id}/#{Image.last.id}: #{file}" + tags + @width.to_s + 'x' + @height.to_s
+		info += ", children: #{children.collect{|c| c.file}.join(", ")}" unless leaf?
+		info
 	end
 
 	def leaf?

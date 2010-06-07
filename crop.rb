@@ -1,3 +1,4 @@
+# TODO: Add square selection
 class Crop
 
 	attr_accessor :input
@@ -32,7 +33,7 @@ class Crop
 			@step = 100
 		when "\n"
 			@@keyboard.navigate
-			@@display.crop_image
+			@@display.crop
 		end
 		@@display.reload = true
 	end

@@ -1,4 +1,4 @@
-class Navigate
+class Show
 
 	def handle(k)
 		case k
@@ -7,7 +7,7 @@ class Navigate
 		when 'k'
 			@@display.previous
 		when 'r'
-			@@display.rotate_image
+			@@display.rotate
 		when 's'
 			@@display.image.selected = !@@display.image.selected
 			@@display.image.save

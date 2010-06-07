@@ -12,7 +12,7 @@ class Command
 			case @input
 			when /^filter/
 				items = @input.split(/\s+/)
-				@input = items.first + "'" + items[1] + "'" # paranthesis for string argument
+				@input = items.first.to_s + "'" + items[1].to_s + "'" # paranthesis for string argument
 			end
 			begin
 				eval "@@display.#{@input}"

@@ -1,6 +1,6 @@
-gems = ['dm-core', 'dm-serializer', 'do_sqlite3', 'dm-is-tree'] unless gems
+#gems = ['dm-core', 'dm-serializer', 'dm-sqlite-adapter', 'dm-migrations','dm-is-tree'] unless gems
 
-gems.each { |g| require g }
+#gems.each { |g| require g }
 
 DataMapper::setup(:default, "sqlite3://#{Dir.pwd}/images.sqlite3")
 

@@ -32,7 +32,8 @@ class Crop
 		when '3'
 			@step = 100
 		when "\n"
-			@@keyboard.navigate
+      debug "*#{k}*"
+			#@@keyboard.show
 			@@display.crop
 		end
 		@@display.reload = true

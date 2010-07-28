@@ -1,7 +1,12 @@
-gems = ['dm-core', 'dm-serializer', 'do_sqlite3', 'dm-is-tree']
+gems = ['dm-core', 'dm-serializer', 'dm-sqlite-adapter', 'dm-migrations','dm-is-tree'] 
 
 Shoes.setup do
-	gems.each { |g| gem g }
+  gem 'dm-core < 1.0'
+  gem 'dm-serializer < 1.0'
+  gem 'do_sqlite3 < 1.0'
+  gem 'dm-is-tree < 1.0'
+
+	#gems.each { |g| gem g }
 end
 
 require 'display'

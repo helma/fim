@@ -17,9 +17,9 @@ class Display
 
 	def reset_crop
 		@crop_top = 0
-	 	@crop_bottom = @img_height
+	 	@crop_bottom = img_height
 	 	@crop_left = 0
-	 	@crop_right = @img_width 
+	 	@crop_right = img_width 
 	end
 
 	def ratio
@@ -48,7 +48,7 @@ class Display
 			@filter = false
 		end
 		goto @image.id
-		@@keyboard.navigate
+		@@keyboard.show
 	end
 
 	def goto(id)
@@ -62,7 +62,7 @@ class Display
 		@image = image.leaves.last
 		@image.last_visited = true
 		@image.save
-		@@keyboard.navigate
+#		@@keyboard.show
 	end
 
 	def next
@@ -124,10 +124,10 @@ class Display
 
 	def crop
 			cropped_file = @image.file.sub(/.jpg/,'crop.jpg')
-			width = ((@crop_right-@crop_left)/@ratio).round
-			height = ((@crop_bottom-@crop_top)/@ratio).round
-			x = (@crop_left/@ratio).round
-			y = (@crop_top/@ratio).round
+			width = ((@crop_right-@crop_left)/self.ratio).round
+			height = ((@crop_bottom-@crop_top)/self.ratio).round
+			x = (@crop_left/self.ratio).round
+			y = (@crop_top/self.ratio).round
 			`jpegtran -crop #{width}x#{height}+#{x}+#{y} #{@image.file} > #{cropped_file}`
 			@image = @image.children.create :file => cropped_file, :width => width, :height => height
 			@reload = true

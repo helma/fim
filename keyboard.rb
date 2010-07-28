@@ -32,7 +32,7 @@ class Keyboard
 		case k
 		when :escape # togle input mode
 			@mode = Index.new
-		when "\n"
+		when "s"
 			@mode = Show.new
 		when 'i'
 			@@display.info = !@@display.info

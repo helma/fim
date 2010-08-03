@@ -1,0 +1,13 @@
+:javascript 
+  $(document).bind('keydown', 'ctrl+c', function(){
+   alert("As you can see, the link no longer took you to jquery.com");
+  });
+%a{ :href => "http://jquery.com/"} JQUERY
+-#:javascript 
+  $(document).ready(function(){
+   $("a").click(function(event){
+     alert("As you can see, the link no longer took you to jquery.com");
+     event.preventDefault();
+   });
+  });
+%a{ :href => "http://jquery.com/"} JQUERY

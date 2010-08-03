@@ -1,0 +1,123 @@
+:javascript 
+  var current = #{session["current"].to_i};
+  $(document).ready(function() {
+    $("#"+current).addClass("selected");
+    $("#info").load("/info/"+current);
+  });
+
+  function move(offset) {
+    $("#"+current).removeClass("selected");
+    current = current + offset;
+    $("#"+current).addClass("selected");
+    $("#info").load("/info/"+current);
+  }
+
+  function tag(t) {
+    $.post("tag", { tag: t, id: current }, function(result) {
+      if (result == "removed") { window.location.href = "/index" }
+      else { move(1); }
+    });
+  }
+
+  function rotate(angle) {
+    $.post("rotate", { id: current, degrees: angle }, function(thumb) {
+      var timestamp = new Date().getTime();
+      $("#"+current).attr("src",thumb+"?"+timestamp);
+    });
+  }
+
+  $(document).keypress(function(e)
+    {
+      //alert(e.which);
+      switch(e.which)
+      {
+        // see http://www.petefreitag.com/cheatsheets/ascii-codes/
+        // "h"
+        case 104:  
+          move(-1);
+          break;  
+
+        // "j" 
+        case 106: 
+          move(#{@columns});
+          break;  
+
+        // "k"
+        case 107:  
+          move(-#{@columns});
+          break;  
+
+        // l -> next
+        case 108:  
+          move(1);
+          break;  
+
+        // b -> prev page
+        case 98: 
+          window.location.href = "/index/prev";
+          break;
+
+        // "Space" 
+        case 32: 
+          window.location.href = "/index/next";
+          break;
+
+        // "Return" 
+        case 13: 
+          window.location.href = "/show/"+current;
+          break;
+
+        // r -> rotate 90
+        case 114:
+          rotate(90);
+          break;
+
+        // R -> rotate 270
+        case 82:
+          rotate(270);
+          break;
+
+        // f -> rotate 180 (flip)
+        case 102:
+          rotate(180);
+          break;
+
+        //1
+        case 49: 
+          // tag delete
+          tag("delete")
+          //$.post("tag", { tag: "delete", id: current })
+          //move(1);
+          break;
+
+        //2
+        case 50: 
+          // tag keep
+          tag("keep")
+          //$.post("tag", { tag: "keep", id: current })
+          //move(1);
+          break;
+
+        //3
+        case 51: 
+          // tag portfolio
+          tag("portfolio")
+          //$.post("tag", { tag: "portfolio", id: current })
+          //move(1);
+          break;
+      }
+  });
+
+= session["show_tag"]
+= @images.size
+%table
+  - i = session["page"].to_i*@rows*@columns 
+  - @rows.times do
+    %tr
+      - @columns.times do
+        %td
+          - if @images[i]
+            %img{:src => thumb(@images[i]), :id => i }
+        - i += 1
+
+#info

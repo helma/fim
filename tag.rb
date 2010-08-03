@@ -5,19 +5,21 @@ class Tag
 
   attr_accessor :tags
 
-  def self.find(tags)
+  def self.find(tag)
     @tags = YAML.load_file("tags.yaml")
-    if tags.empty?
-      @tags.collect{|t,i| i}.flatten.compact.uniq.collect{|i| i.sub(/public/,'')}.sort
+    if tag.nil? or tag == ""
+      @tags["all"].collect{|i| i.sub(/public/,'')}.sort
+    elsif tag == "empty"
+      images = @tags["all"]
+      ["delete","keep","portfolio"].each { |t| images = images - @tags[t] }
+      images.collect{|i| i.sub(/public/,'')}.sort
     else
-      images = []
-      tags.each { |t| images << @tags[t] }
-      images.flatten.compact.uniq.collect{|i| i.sub(/public/,'')}.sort
+      @tags[tag].collect{|i| i.sub(/public/,'')}.sort
     end
   end
 
   def self.tags(img)
-    MiniExiftool.new(File.join('public',img)).keywords.to_a.join(', ') #+ " orientation: "+ MiniExiftool.new(File.join('public',img))['Orientation']
+    MiniExiftool.new(File.join('public',img)).keywords.to_a.join(', ')
   end
 
   def self.set?(tag,img)
@@ -41,8 +43,8 @@ class Tag
     exif.save
 
     tags = YAML.load_file("tags.yaml")
-    tags[tag].delete(img)
-    File.open('tags.yaml', 'w+') { |out| YAML::dump(@tags, out) }
+    tags[tag].delete File.join('public',img)
+    File.open('tags.yaml', 'w+') { |out| YAML::dump(tags, out) }
 
   end
 
@@ -54,9 +56,10 @@ class Tag
 
     tags = YAML.load_file("tags.yaml")
     tags[tag] = [] unless tags[tag]
-    tags[tag] << img
+    tags[tag] << File.join('public',img)
     tags[tag].uniq!
-    File.open('tags.yaml', 'w+') { |out| YAML::dump(@tags, out) }
+    tags[tag].sort!
+    File.open('tags.yaml', 'w+') { |out| YAML::dump(tags, out) }
   end
 
 end

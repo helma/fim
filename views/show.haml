@@ -1,0 +1,10 @@
+:javascript 
+  var current = #{session["current"].to_i};
+  $(document).ready(function() {
+    $("#info").load("/info/"+current);
+  });
+  $(document).keypress(function(e) { window.location.href = "/index"; });
+
+= session["show_tag"]
+%img{:src => @image, :height => "95%"}
+#info

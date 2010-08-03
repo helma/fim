@@ -15,10 +15,10 @@ Dir["public/**/*{jpg,JPG,jpeg}"].each do |i|
     puts tag
   end
   t = i.sub(/public/,"public/thumbs").sub(/jpg/i,'png')
-  #unless File.exists?(t)
+
+  # thumbs
   puts t
   `mkdir -p #{File.dirname(t)}`
   `convert #{i} -thumbnail x100 -auto-orient -strip  #{t}`
-  #end
 end
 File.open('tags.yaml', 'w+') { |out| YAML::dump(tags, out) }

@@ -2,7 +2,8 @@ require 'rubygems'
 require 'sinatra'
 require 'tag'
 
-set :sessions, true
+#set :sessions, true
+enable :sessions
 
 helpers do
   def thumb(img)
@@ -11,82 +12,81 @@ helpers do
 end
 
 before do
-  #@rows = 7
-  #@columns = 9
   @rows = 6
   @columns = 7
+  @images = Tag.find(session["show_tag"])
 end
 
 # index
 get '/index/next' do
-  total_size = Tag.find(session["tags"]).size
-  session["first_id"] = session["first_id"].to_i + @rows*@columns
-  #session["first_id"] = total_size - @rows*@columns if session["first_id"] > total_size
-  session["current"] = session["first_id"]
+  session["page"] = session["page"] + 1 unless session["page"] >= @images.size/(@rows*@columns)
+  session["current"] = session["page"]*@rows*@columns
   redirect "/index"
 end
 
 get '/index/prev' do
-  session["first_id"] = session["first_id"].to_i - @rows*@columns
-  session["first_id"] = 0 if session["first_id"] < 0
-  #session["current"] = session["first_id"]
-  redirect "/index"
-end
-
-get '/index/:id' do
-  session["first_id"] = params[:id].to_i
+  session["page"] = session["page"] - 1 
+  session["page"] = 0 if session["page"] < 0
+  session["current"] = session["page"]*@rows*@columns
   redirect "/index"
 end
 
 get '/index' do
-  session["first_id"] = 0 unless session["first_id"]
-  session["tags"] = [] unless session["tags"]
-  session["current"] = session["first_id"]
-  @images = Tag.find(session["tags"])
+  session["page"] = 0 unless session["page"]
+  session["show_tag"] = "" unless session["show_tag"]
+  session["current"] = session["page"]*@rows*@columns unless session["current"]
   haml :index
 end
 
 # show
 get '/show/:id' do
-  @image = Tag.find(session["tags"])[params[:id].to_i]
-  session["current"] = params[:id].to_i
+  @image = @images[session["current"]]
   haml :show
 end
 
 # tags
 get '/tag' do
-  session["tags"] = []
-  session["first_id"] = 0
+  session["show_tag"] = ""
+  session["page"] = 0
+  session["current"] = 0
   redirect "/index"
 end
 
-get '/tag/:tags' do
-  tags = params[:tags].split(/,\s*/).to_a
-  session["tags"] = tags
-  session["first_id"] = 0
+get '/tag/:tag' do
+  session["show_tag"] = params[:tag]
+  session["page"] = 0
+  session["current"] = 0
   redirect "/index"
-end
-
-get "/tag/image/:id" do
-  image = Tag.find(session["tags"])[params[:id].to_i]
-  session["current"] = params[:id].to_i
-  image + ": " + Tag.tags(image)
 end
 
 post "/tag" do
-  image = Tag.find(session["tags"])[params[:id].to_i]
+  image = @images[params[:id].to_i]
   Tag.toggle(params[:tag],image)
+  "removed" if Tag.find(session["show_tag"]).index(image).nil?
+=begin
+    session["current"] = params[:id].to_i
+  else
+    session["current"] += 1
+  end
+  redirect "/index"
+=end
 end
 
 # tools
+get "/info/:id" do 
+  session["current"] = params[:id].to_i
+  image = @images[session["current"]]
+  image + ": " + Tag.tags(image) + session.inspect
+end
+
 post "/rotate" do
-  i= Tag.find(session["tags"])[params[:id].to_i]
-  image = File.join 'public',i
-  `cp #{image} #{image}.original`
+  i = @images[params[:id].to_i]
+  image = File.join 'public', i
+  puts `cp -v #{image} #{image}.original`
   `jpegtran -copy all -rotate #{params[:degrees]} #{image}.original > #{image}`
   thumbnail = File.join 'public', thumb(i)
   `convert #{image} -thumbnail x100 -strip  #{thumbnail}`
-  thumb Tag.find(session["tags"])[params[:id].to_i]
+  thumb i
 end
 
 get '/stylesheet.css' do

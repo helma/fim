@@ -1,3 +1,4 @@
+require 'rubygems'
 require 'mini_exiftool'
 require 'yaml'
 
@@ -5,36 +6,53 @@ class Tag
 
   attr_accessor :tags
 
-  def self.find(tag)
-    @tags = YAML.load_file("tags.yaml")
+  def initialize
+    if File.exist?("tags.yaml")
+      @tags = YAML.load_file("tags.yaml")
+    else
+      @tags = {}
+      @tags["all"] = []
+    end
+    @quality = ["delete","keep","work","portfolio"]
+  end
+
+  def find(tag)
     if tag.nil? or tag == ""
-      @tags["all"].collect{|i| i.sub(/public/,'')}.sort
+      @tags["all"].sort
     elsif tag == "empty"
       images = @tags["all"]
-      ["delete","keep","portfolio"].each { |t| images = images - @tags[t] }
-      images.collect{|i| i.sub(/public/,'')}.sort
+      @quality.each { |t| images = images - @tags[t] }
+      images.sort
     else
-      @tags[tag].collect{|i| i.sub(/public/,'')}.sort
+      @tags[tag].sort
     end
   end
 
-  def self.tags(img)
+  def all
+    @tags.keys
+  end
+
+  def tags(img)
     MiniExiftool.new(File.join('public',img)).keywords.to_a.join(', ')
   end
 
-  def self.set?(tag,img)
+  def set?(tag,img)
     MiniExiftool.new(File.join('public',img)).keywords.to_a.include?(tag)
   end
 
-  def self.toggle(tag,img)
-    if Tag.set?(tag,img)
-      Tag.delete(tag,img)
+  def toggle(tag,img)
+    if set?(tag,img)
+      delete(tag,img)
     else
-      Tag.add(tag,img)
+      # remove all quality tags
+      if @quality.include?(tag)
+        @quality.each {|t| delete(t,img) if set?(t,img) }
+      end
+      add(tag,img)
     end
   end
 
-  def self.delete(tag,img)
+  def delete(tag,img)
 
     exif = MiniExiftool.new(File.join('public',img))
     keywords = exif.keywords
@@ -42,24 +60,35 @@ class Tag
     exif.keywords = keywords
     exif.save
 
-    tags = YAML.load_file("tags.yaml")
-    tags[tag].delete File.join('public',img)
-    File.open('tags.yaml', 'w+') { |out| YAML::dump(tags, out) }
-
+    @tags[tag].delete img
+    save
   end
 
-  def self.add(tag,img)
+  def add(tag,img)
 
     exif = MiniExiftool.new(File.join('public',img))
     exif.keywords = [exif.keywords , tag].flatten.uniq
     exif.save
 
-    tags = YAML.load_file("tags.yaml")
-    tags[tag] = [] unless tags[tag]
-    tags[tag] << File.join('public',img)
-    tags[tag].uniq!
-    tags[tag].sort!
-    File.open('tags.yaml', 'w+') { |out| YAML::dump(tags, out) }
+    @tags[tag] = [] unless @tags[tag]
+    @tags[tag] << img
+    @tags[tag].uniq!
+    save
+  end
+
+  def update(img,write=true)
+    exif = MiniExiftool.new(File.join('public',img))
+    keywords = exif['keywords'].to_a
+    @tags["all"] << img
+    keywords.each do |tag|
+      @tags[tag] = [] if @tags[tag].nil?
+      @tags[tag] << img
+    end
+    save if write
+  end
+
+  def save
+    File.open('tags.yaml', 'w+') { |out| YAML::dump(@tags, out) }
   end
 
 end

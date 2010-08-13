@@ -1,10 +1,19 @@
-:javascript 
-  var current = #{session["current"].to_i};
-  $(document).ready(function() {
-    $("#info").load("/info/"+current);
-  });
-  $(document).keypress(function(e) { window.location.href = "/index"; });
+:javascript
 
-= session["show_tag"]
-%img{:src => @image, :height => "95%"}
-#info
+  var imgWidth = #{@width};
+  var imgHeight = #{@height};
+  var displayWidth;
+  var displayHeight;
+  var ratio;
+
+  $(document).ready(function() {
+    displayWidth = $(document).width();
+    displayHeight = $(document).height();
+    ratio = Math.min(displayWidth/imgWidth, displayHeight/imgHeight)*0.95;
+    imgWidth = Math.round(imgWidth*ratio);
+    imgHeight = Math.round(imgHeight*ratio);
+    $("#i").width(imgWidth);
+    $("#i").height(imgHeight);
+  });
+
+%img{:src => @image, :id => "i"}

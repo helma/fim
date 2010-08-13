@@ -1,0 +1,2 @@
+#!/bin/sh
+uzbl-browser --config uzbl.config http://localhost:4567/index 

@@ -1,24 +1,16 @@
 #!/usr/bin/env ruby
-require 'rubygems'
-require 'yaml'
-require 'mini_exiftool'
+require 'tag'
+require 'thumb'
 
-tags = {}
-tags["all"] = []
-Dir["public/**/*{jpg,JPG,jpeg}"].each do |i|
-  puts i
-  keywords = MiniExiftool.new(i)['keywords'].to_a
-  tags["all"] << i
-  keywords.each do |tag|
-    tags[tag] = [] if tags[tag].nil?
-    tags[tag] << i
-    puts tag
+@@tag = Tag.new
+
+Dir["public/images/**/*{jpg,JPG,jpeg}"].each do |img|
+  img.sub!(/public/,'')
+  unless @@tag.find("all").include? img
+    puts img
+    @@tag.update(img,false)
+    @@tag.toggle("work",img) if @@tag.set?("portfolio",img)
+    Thumb.new(img)
   end
-  t = i.sub(/public/,"public/thumbs").sub(/jpg/i,'png')
-
-  # thumbs
-  puts t
-  `mkdir -p #{File.dirname(t)}`
-  `convert #{i} -thumbnail x100 -auto-orient -strip  #{t}`
 end
-File.open('tags.yaml', 'w+') { |out| YAML::dump(tags, out) }
+@@tag.save

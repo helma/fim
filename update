@@ -9,7 +9,6 @@ Dir["public/images/**/*{jpg,JPG,jpeg}"].each do |img|
   unless @@tag.find("all").include? img
     puts img
     @@tag.update(img,false)
-    @@tag.toggle("work",img) if @@tag.set?("portfolio",img)
     Thumb.new(img)
   end
 end

@@ -40,7 +40,7 @@ get '/index' do
   session["page"] = 0 unless session["page"]
   session["show_tag"] = "" unless session["show_tag"]
   first = session["page"]*@rows*@columns
-  last = first + @rows*@columns
+  last = first + @rows*@columns -1
   @images = @@tag.find(session["show_tag"])
   @size = @images.size
   @images = @images[first..last]
@@ -114,6 +114,22 @@ post "/crop" do
   @@tag.update(cropped)
   session["current"] = cropped
   redirect "/index"
+end
+
+# edit
+post "/edit" do
+  original = File.join("public",params[:image])
+  exif = MiniExiftool.new original
+  edit = original.sub(/.jpg/i,'_edit.png')
+  `convert #{original} -resize '3648x2048' -quality 95 #{edit}` 
+  `exiftool -tagsFromFile  #{original} #{edit}`
+  @@tag.update(edit.sub(/public/,''))
+  `./edit #{edit} &`
+end
+
+# print
+get %r{/print(.*)} do |img|
+  `./print #{File.join "public",img}`
 end
 
 # tools

@@ -1,0 +1,14 @@
+#!/bin/bash
+sam2p -m:top:75 -m:bottom:25 $1 $1.ps
+#year=`exiftool $1|grep "^Date.*Original"|cut -d ':' -f2|tr -d ' '` # does not work for samsung camera
+file=`echo $1|sed -e 's/.*\///g;s/\(.*[0-9]\).*/\1/;s/dsc/d/;s/Foto-/f/;s/IMG_/i/'`
+echo $file
+sed -i '/save/a \
+/Courier findfont 16 scalefont setfont\
+gsave\
+  0 0 0 setrgbcolor\
+  75 25 moveto\
+  -90 rotate\
+  (helma@in-silico.ch #'"$file"', 150x85cm) dup stringwidth pop neg 2 rmoveto show\
+grestore' $1.ps
+lpr $1.ps

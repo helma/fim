@@ -1,2 +1,2 @@
 #!/bin/sh
-ruby application.rb -e production &
+ruby application.rb -e production 

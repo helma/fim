@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+
+require 'tag'
+require 'thumb'
+
+edit = ARGV[0]
+`gimp #{edit}`
+Thumb.new(edit.sub(/public/,''))

@@ -11,8 +11,13 @@
   function move(offset) {
     $("#img"+current).removeClass("current");
     current = current + offset;
-    $("#img"+current).addClass("current");
-    $("#info").load("/info"+images[current]);
+    // js array size??
+    if (current >= images.length) { window.location.href = "/index/next"; }
+    else if (current < 0)  { window.location.href = "/index/prev"; }
+    else {
+      $("#img"+current).addClass("current");
+      $("#info").load("/info"+images[current]);
+    }
   }
 
   function tag(t) {
@@ -22,7 +27,7 @@
           window.location.href = "/index";
         });
       }
-      else { move(1); }
+      //else { move(1); }
     });
     if (t == "selected") { $("#img"+current).toggleClass("selected"); };
   }
@@ -56,6 +61,8 @@
         case "f": rotate(180); break;
 
         case "c": window.location.href = "/crop"+images[current]; break;
+        case "e": $.post("/edit",{image: images[current]}); break;
+        case "p": $.get("/print/"+ images[current]); break;
 
         // generic tagging
         case "t": $.get("/tag/select", function(t) { tag(t); }); break;

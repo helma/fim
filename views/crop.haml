@@ -20,8 +20,8 @@
   });
 
   function init() {
-    displayWidth = $(document).width();
-    displayHeight = $(document).height();
+    displayWidth = $(window).width();
+    displayHeight = $(window).height();
     ratio = Math.min(displayWidth/imgWidth, displayHeight/imgHeight)*0.95;
     imgWidth = Math.round(imgWidth*ratio);
     imgHeight = Math.round(imgHeight*ratio);
@@ -89,7 +89,7 @@
       case ",": step = 1; break;  
       case ".": step = 10; break;  
 
-      case "q": window.location.href = "/index"; break;
+      //case "q": window.location.href = "/index"; break;
       case "\r": crop(); break;
     };
   });

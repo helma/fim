@@ -7,8 +7,8 @@
   var ratio;
 
   $(document).ready(function() {
-    displayWidth = $(document).width();
-    displayHeight = $(document).height();
+    displayWidth = $(window).width();
+    displayHeight = $(window).height();
     ratio = Math.min(displayWidth/imgWidth, displayHeight/imgHeight)*0.95;
     imgWidth = Math.round(imgWidth*ratio);
     imgHeight = Math.round(imgHeight*ratio);

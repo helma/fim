@@ -27,7 +27,6 @@
           window.location.href = "/index";
         });
       }
-      //else { move(1); }
     });
     if (t == "selected") { $("#img"+current).toggleClass("selected"); };
   }
@@ -40,7 +39,6 @@
   }
 
   $(document).keypress(function(e) {
-      //alert(String.fromCharCode(e.which));
       switch(String.fromCharCode(e.which)) {
 
         case "h": move(-1); break;  
@@ -66,8 +64,6 @@
 
         // generic tagging
         case "t": $.get("/tag/select", function(t) { tag(t); }); break;
-          //$("#info").load("/tag/select");
-          //window.location.href = "/tag/select";
         case "T": $.get("/tag/select", function(t) { window.location.href = "/tag/"+t; }); break;
 
         // fast tagging
@@ -94,6 +90,8 @@
 
         // empty tags
         case "0": window.location.href = "/tag/empty"; break;
+
+        //case "q": window.open('','_self',''); window.close(); break;
       }
   });
 

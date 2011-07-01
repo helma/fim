@@ -1,2 +1,14 @@
-#!/bin/sh
-uzbl-browser --config uzbl.config http://localhost:4567/index 
+#!/usr/bin/env ruby
+require 'webkit'
+require 'yaml'
+
+wv = Gtk::WebKit::WebView.new
+win = Gtk::Window.new
+win.add(wv)
+win.signal_connect("key-press-event") do |w,e|
+  Gtk.main_quit if Gdk::Keyval.to_name(e.keyval) == "q"
+end
+win.signal_connect("destroy") { Gtk.main_quit }
+wv.open "http://localhost:4567/index"
+win.show_all
+Gtk.main

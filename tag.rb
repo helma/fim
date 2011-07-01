@@ -17,7 +17,7 @@ class Tag
   end
 
   def find(tag)
-    if tag.nil? or tag == ""
+    if tag.nil? or tag == "" or @tags[tag].nil?
       @tags["all"].sort
     elsif tag == "empty"
       images = @tags["all"]
@@ -53,23 +53,19 @@ class Tag
   end
 
   def delete(tag,img)
-
     exif = MiniExiftool.new(File.join('public',img))
     keywords = exif.keywords
     keywords.delete(tag)
     exif.keywords = keywords
     exif.save
-
     @tags[tag].delete img
     save
   end
 
   def add(tag,img)
-
     exif = MiniExiftool.new(File.join('public',img))
     exif.keywords = [exif.keywords , tag].flatten.uniq
     exif.save
-
     @tags[tag] = [] unless @tags[tag]
     @tags[tag] << img
     @tags[tag].uniq!

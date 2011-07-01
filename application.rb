@@ -1,62 +1,61 @@
 require 'rubygems'
 require 'sinatra'
-require 'tag'
-require 'thumb'
-
-enable :sessions
+require 'haml'
+require 'sass'
+require File.join(File.dirname(__FILE__),"tag.rb")
+require File.join(File.dirname(__FILE__),"thumb.rb")
 
 @@tag = Tag.new
 
 before do
   @rows = 7
-  @columns = 7
+  @columns = 6
+  @show_tag = "" unless @show_tag = File.read("show-tag").chomp
+  @current = 0 unless @current = File.read("current").to_i
+end
+
+after do
+  File.open("show-tag", "w+"){|f| f.puts @show_tag}
+  File.open("current", "w+"){|f| f.puts @current}
 end
 
 # index
 get '/index/first' do
-  session["page"] = 0
+  @current = 0
   redirect "/index"
 end
 
 get '/index/last' do
-  @images = @@tag.find(session["show_tag"])
-  session["page"] = @images.size/(@rows*@columns)
+  @current = @@tag.find(@show_tag).size - 1
   redirect "/index"
 end
 
 get '/index/next' do
-  @images = @@tag.find(session["show_tag"])
-  session["page"] = session["page"] + 1 unless session["page"] >= @images.size/(@rows*@columns)
+  @current += @rows*@columns
+  @current = @@tag.find(@show_tag).size - 1 if @current > @@tag.find(@show_tag).size
   redirect "/index"
 end
 
 get '/index/prev' do
-  session["page"] = session["page"] - 1 
-  session["page"] = 0 if session["page"] < 0
+  @current -= @rows*@columns
+  @current = 0 if @current < 0
   redirect "/index"
 end
 
 get '/index' do
-  session["page"] = 0 unless session["page"]
-  session["show_tag"] = "" unless session["show_tag"]
-  first = session["page"]*@rows*@columns
-  last = first + @rows*@columns -1
-  @images = @@tag.find(session["show_tag"])
-  @size = @images.size
-  @images = @images[first..last]
-  unless @current = @images.index(session["current"]) 
-    @current = 0
-    session["current"] = @images[0]
-  end
+  first = @current - @current.modulo(@rows*@columns)
+  last = first + @rows*@columns 
+  @images = @@tag.find(@show_tag)[first..last]
+  puts @images.inspect
   @selected = @@tag.find("selected")
   haml :index
 end
 
 # show
-get %r{/show(.*)} do |img|
-  session["current"] = img
-  @image = img
-  exif = MiniExiftool.new(File.join "public",img)
+get %r{/show/(.*)} do |cur|
+  @current = cur.to_i
+  @image = @@tag.find(@show_tag)[@current]
+  exif = MiniExiftool.new(File.join "public",@image)
   @width = exif.imagewidth
   @height = exif.imageheight
   haml :show
@@ -64,8 +63,7 @@ end
 
 # tags
 get '/tag' do
-  session["show_tag"] = ""
-  session["page"] = 0
+  @show_tag = ""
   redirect "/index"
 end
 
@@ -74,20 +72,22 @@ get '/tag/select' do
 end
 
 get '/tag/:tag' do
-  session["show_tag"] = params[:tag]
-  session["page"] = 0
+  image = @@tag.find(@show_tag)[@current]
+  @show_tag = params[:tag]
+  @current = 0 unless @current = @@tag.find(@show_tag).index(image)
   redirect "/index"
 end
 
-post %r{/tag(.*)} do |image|
-  session["current"] = image
+post %r{/tag/(.*)} do |cur|
+  @current = cur.to_i
+  image = @@tag.find(@show_tag)[@current]
   @@tag.toggle(params[:tag],image)
-  @@tag.find(session["show_tag"]).include?(image).to_s
+  @@tag.find(@show_tag).include?(image).to_s
 end
 
 # rotate
 get %r{/rotate(.*)} do |img|
-  session["current"] = img
+  #@current = img
   image = File.join 'public', img
   puts `cp -v #{image} #{image}.original`
   `jpegtran -copy all -rotate #{params[:degrees]} #{image}.original > #{image}`
@@ -96,7 +96,7 @@ end
 
 # crop
 get %r{/crop(.*)} do |img|
-  session["current"] = img
+  #@current = img
   @image = img
   exif = MiniExiftool.new(File.join "public",img)
   @width = exif.imagewidth
@@ -112,7 +112,7 @@ post "/crop" do
   cropped.sub!(/public/,'')
   Thumb.new(cropped)
   @@tag.update(cropped)
-  session["current"] = cropped
+  #@current = cropped
   redirect "/index"
 end
 
@@ -133,14 +133,13 @@ get %r{/print(.*)} do |img|
 end
 
 # tools
-post %r{/current(.*)} do |img|
-  session["current"] = img
+post %r{/current/(.*)} do |cur|
+  @current = cur
 end
 
-get %r{/info(.*)} do |image|
-  session["current"] = image
-  @images = @@tag.find(session["show_tag"])
-  image + ": " + @@tag.tags(image) #+ session.inspect
+get %r{/info/(.*)} do |current|
+  images = @@tag.find(@show_tag)
+  "#{images[current.to_i]}: #{@@tag.tags(images[current.to_i])} (#{@show_tag} #{current}/#{images.size})"
 end
 
 get '/stylesheet.css' do

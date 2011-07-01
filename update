@@ -1,15 +1,21 @@
 #!/usr/bin/env ruby
 require 'tag'
 require 'thumb'
+require 'yajl'
 
-@@tag = Tag.new
-
-Dir["public/images/**/*{jpg,JPG,jpeg}"].each do |img|
-  img.sub!(/public/,'')
-  unless @@tag.find("all").include? img
-    puts img
-    @@tag.update(img,false)
-    Thumb.new(img)
+index = {}
+index["all"] = []
+#idx = `exiftool -j -fast2 -Keywords public/images/**/`
+#File.open("idx.json","w+"){|f| f.puts idx}
+Yajl::Parser.parse(`zsh -c "exiftool -j -fast2 -Keywords public/images/**/"`).each do |t|
+  img = t["SourceFile"].sub(/public/,'')
+  if img =~ /jpg|jpeg/i
+    index["all"] << img
+    t["Keywords"].each do |k|
+      index[k] = [] unless index[k]
+      index[k] << img
+    end if t["Keywords"]
   end
 end
-@@tag.save
+index.each_value{ |v| v.sort! }
+File.open('index.yaml', 'w+') { |f| f.puts index.to_yaml }

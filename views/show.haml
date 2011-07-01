@@ -16,4 +16,10 @@
     $("#i").height(imgHeight);
   });
 
+  $(document).keypress(function(e) {
+      switch(String.fromCharCode(e.which)) {
+        case "\r": window.location.href = "/index"; break;
+      }
+  });
+
 %img{:src => @image, :id => "i"}

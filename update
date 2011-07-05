@@ -1,21 +1,16 @@
 #!/usr/bin/env ruby
-require 'tag'
-require 'thumb'
 require 'yajl'
+require 'yaml'
 
 index = {}
-index["all"] = []
-#idx = `exiftool -j -fast2 -Keywords public/images/**/`
-#File.open("idx.json","w+"){|f| f.puts idx}
 Yajl::Parser.parse(`zsh -c "exiftool -j -fast2 -Keywords public/images/**/"`).each do |t|
   img = t["SourceFile"].sub(/public/,'')
   if img =~ /jpg|jpeg/i
-    index["all"] << img
-    t["Keywords"].each do |k|
-      index[k] = [] unless index[k]
-      index[k] << img
-    end if t["Keywords"]
+    if t["Keywords"]
+      index[img] = t["Keywords"]
+    else
+      index[img] = []
+    end
   end
 end
-index.each_value{ |v| v.sort! }
 File.open('index.yaml', 'w+') { |f| f.puts index.to_yaml }

@@ -1,46 +1,10 @@
 :javascript 
 
   var images = [#{@images.collect{|i| '"'+i+'"'}.join(',')}];
-  var current = #{@current};
-  var idx = #{@current.modulo(@rows*@columns)};
-
-  $(document).ready(function() {
-    $("#img"+idx).removeClass("other");
-    $("#img"+idx).addClass("current");
-    $("#info").load("/info/"+current);
-  });
-
-  function move(offset) {
-    $("#img"+idx).removeClass("current");
-    $("#img"+idx).addClass("other");
-    current = current + offset;
-    idx = idx + offset;
-    if (idx >= images.length) { window.location.href = "/index/next"; }
-    else if (idx < 0)  { window.location.href = "/index/prev"; }
-    else {
-      $("#img"+idx).removeClass("other");
-      $("#img"+idx).addClass("current");
-      $("#info").load("/info/"+current);
-    }
-  }
-
-  function tag(t) {
-    $.post("/tag/"+current, { tag: t }, function(result) {
-      if (result == "false") {
-        $.post("/current/"+current,{}, function() {
-          window.location.href = "/index";
-        });
-      }
-    });
-    if (t == "selected") { $("#img"+idx).toggleClass("selected"); };
-  }
-
-  function rotate(angle) {
-    $.post("/rotate"+images[idx], { degrees: angle }, function(thumb) {
-      var timestamp = new Date().getTime();
-      $("#img"+idx).attr("src",thumb+"?"+timestamp);
-    });
-  }
+  var current = "#{@current}";
+  var size = #{@rows*@columns};
+  var idx = #{@images.index(@current)};
+  var first = size*Math.floor(idx/size);
 
   $(document).keypress(function(e) {
       switch(String.fromCharCode(e.which)) {
@@ -50,16 +14,16 @@
         case "k": move(-#{@columns}); break;  
         case "l": move(1); break;  
 
-        case "b": window.location.href = "/index/prev"; break;
-        case " ": window.location.href = "/index/next"; break;
+        case "b": move(-size); break;
+        case " ": move(size); break;
 
-        case "G": window.location.href = "/index/last"; break;
-        case "g": window.location.href = "/index/first"; break;
+        case "G": movelast(); break;
+        case "g": movefirst(); break;
 
-        case "\r": window.location.href = "/show/"+current; break;
+        case "\r": window.location.href = "/show"+current; break;
 
-        case "r": rotate(90); break;
-        case "R": rotate(270); break;
+        //case "r": rotate(90); break;
+        //case "R": rotate(270); break;
         case "f": rotate(180); break;
 
         case "c": window.location.href = "/crop"+images[idx]; break;
@@ -94,22 +58,83 @@
 
         // empty tags
         case "0": window.location.href = "/tag/empty"; break;
-
-        //case "q": window.open('','_self',''); window.close(); break;
       }
   });
 
-%table{:width => "100%",:height => "100%"}
-  - i = 0
-  - @rows.times do
-    %tr
-      - @columns.times do
-        %td{:align => "center"}
-          - if @images[i]
-            - if @selected.include? @images[i]
-              %img{:src => Thumb.path(@images[i]), :id => "img#{i}", :class => "selected" }
-            - else
-              %img{:src => Thumb.path(@images[i]), :id => "img#{i}", :class => "other" }
-        - i += 1
+  $(document).ready(function() {
+    makeTable();
+    highlight();
+    $("#info").load("/info"+current);
+  });
 
+  function highlight() {
+    $("#img"+idx).removeClass("other");
+    $("#img"+idx).addClass("current");
+  }
+
+  function move(offset) {
+    $("#img"+idx).removeClass("current");
+    $("#img"+idx).addClass("other");
+    idx = idx + offset;
+    if (idx < 0) { idx = 0; }
+    else if (idx >= #{@images.size}) { idx = #{@images.size - 1}; }
+    current = images[idx];
+    $.post("current"+current, {});
+    if ((idx < first)|(idx >= first+size)) { location.reload(); }
+    else {
+      highlight();
+      $("#info").load("/info/"+current);
+    }
+  }
+
+  function movefirst() {
+    $.post("current"+images[0], {});
+    window.location.reload();
+  }
+
+  function movelast() {
+    $.post("current"+images[images.length-1], {});
+    window.location.reload();
+  }
+
+  function tag(t) {
+    $.post("/tag/"+current, { tag: t }, function(result) {
+      if (result == "false") {
+        $.post("/current/"+current,{}, function() {
+          window.location.href = "/index";
+        });
+      }
+    });
+    if (t == "selected") { $("#img"+idx).toggleClass("selected"); };
+  }
+
+  function rotate(angle) {
+    $.post("/rotate"+images[idx], { degrees: angle }, function(thumb) {
+      var timestamp = new Date().getTime();
+      $("#img"+idx).attr("src",thumb+"?"+timestamp);
+    });
+  }
+
+  function makeTable() {
+
+    $('#index').append('<table width="100%", length="100%"></table>');
+    $('#index table').append('<tbody></tbody>');
+
+    n = first;
+    for(c=0;c<#{@rows};c++){
+      trow = '<tr>';
+      for(k=0;k<#{@columns};k++) {
+        trow += '<td>';
+        if (n < images.length) {
+          trow += '<img src="'+images[n].replace(/images/, "thumbs").replace(/jpg/i,"png")+'", id="img'+n+'", class="other"'+'" />'
+        }
+        trow += '</td>'
+        n = n+1;
+      }
+      trow += '</tr>'
+      $('#index table tbody').append(trow);
+    }
+  }
+
+#index
 #info

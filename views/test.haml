@@ -1,2 +1,34 @@
 :javascript 
-  $(document).bind('keydown','c',function(){ alert( "key pressed: " )});
+
+  window.onload=function() {
+    makeTable();
+  }
+
+  function makeTable() {
+    row=new Array();
+    cell=new Array();
+
+    var row_num=12; //edit this value to suit
+    var cell_num=12; //edit this value to suit
+
+    tab=document.createElement('table');
+    tab.setAttribute('id','newtable');
+
+    tbo=document.createElement('tbody');
+
+    for(c=0;c<row_num;c++){
+      row[c]=document.createElement('tr');
+
+      for(k=0;k<cell_num;k++) {
+        cell[k]=document.createElement('td');
+        cont=document.createTextNode((c+1)*(k+1))
+        cell[k].appendChild(cont);
+        row[c].appendChild(cell[k]);
+      }
+      tbo.appendChild(row[c]);
+    }
+    tab.appendChild(tbo);
+    document.getElementById('mytable').appendChild(tab);
+  }
+
+#mytable

@@ -2,16 +2,53 @@ require 'rubygems'
 require 'sinatra'
 require 'haml'
 require 'sass'
-require File.join(File.dirname(__FILE__),"tag.rb")
+require 'yaml'
+require 'mini_exiftool'
+#require File.join(File.dirname(__FILE__),"tag.rb")
 require File.join(File.dirname(__FILE__),"thumb.rb")
 
+before '/index*' do
+  @rows = 7
+  @columns = 6
+  @index = YAML.load_file("index.yaml")
+  @tag = File.read("tag").chomp
+  @images = @index.collect{|k,v| k if v.include?(@tag)}.compact.sort
+  @current = File.read("current").chomp
+  @current = @images.first unless @images.include? @current
+  @selected = @index.collect{|k,v| k if v.include?("selected")}.compact
+end
+
+get '/index' do
+  haml :index
+end
+
+# index
+get %r{/info(.*)} do |current|
+  #images = @@tag.find(@show_tag)
+  #"#{images[current.to_i]}: #{@@tag.tags(images[current.to_i])} (#{@show_tag} #{current}/#{images.size})"
+  "#{current}" #: #{@@tag.tags(images[current.to_i])} (#{@show_tag} #{current}/#{images.size})"
+end
+
+# show
+get %r{/show(.*)} do |path|
+  @image = path
+  exif = MiniExiftool.new(File.join "public",path)
+  @width = exif.imagewidth
+  @height = exif.imageheight
+  haml :show
+end
+
+# change current
+post %r{/current(.*)} do |cur|
+  File.open("current", "w+"){|f| f.puts cur}
+end
+
+=begin
 @@tag = Tag.new
 
 before do
-  @rows = 7
-  @columns = 6
-  @show_tag = "" unless @show_tag = File.read("show-tag").chomp
-  @current = 0 unless @current = File.read("current").to_i
+  @tag = "" unless @tag = File.read("show-tag").chomp
+  #@current = 0 unless @current = File.read("current").to_i
 end
 
 after do
@@ -19,16 +56,19 @@ after do
   File.open("current", "w+"){|f| f.puts @current}
 end
 
-# index
-get '/index/first' do
-  @current = 0
+get '/test' do
+  haml :test
+end
+get '/page/first' do
+  File.open("current", "w+"){|f| f.puts @images.first}
   redirect "/index"
 end
 
-get '/index/last' do
-  @current = @@tag.find(@show_tag).size - 1
+get '/page/last' do
+  File.open("current", "w+"){|f| f.puts @images.last}
   redirect "/index"
 end
+
 
 get '/index/next' do
   @current += @rows*@columns
@@ -40,25 +80,6 @@ get '/index/prev' do
   @current -= @rows*@columns
   @current = 0 if @current < 0
   redirect "/index"
-end
-
-get '/index' do
-  first = @current - @current.modulo(@rows*@columns)
-  last = first + @rows*@columns 
-  @images = @@tag.find(@show_tag)[first..last]
-  puts @images.inspect
-  @selected = @@tag.find("selected")
-  haml :index
-end
-
-# show
-get %r{/show/(.*)} do |cur|
-  @current = cur.to_i
-  @image = @@tag.find(@show_tag)[@current]
-  exif = MiniExiftool.new(File.join "public",@image)
-  @width = exif.imagewidth
-  @height = exif.imageheight
-  haml :show
 end
 
 # tags
@@ -133,14 +154,7 @@ get %r{/print(.*)} do |img|
 end
 
 # tools
-post %r{/current/(.*)} do |cur|
-  @current = cur
-end
-
-get %r{/info/(.*)} do |current|
-  images = @@tag.find(@show_tag)
-  "#{images[current.to_i]}: #{@@tag.tags(images[current.to_i])} (#{@show_tag} #{current}/#{images.size})"
-end
+=end
 
 get '/stylesheet.css' do
   headers 'Content-Type' => 'text/css; charset=utf-8'

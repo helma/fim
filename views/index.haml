@@ -6,6 +6,8 @@
   var idx = #{@images.index(@current)};
   var first = size*Math.floor(idx/size);
 
+  /*
+  */
   $(document).keypress(function(e) {
       switch(String.fromCharCode(e.which)) {
 
@@ -22,6 +24,31 @@
 
         case "\r": window.location.href = "/show"+current; break;
 
+        // generic tagging
+        case "t": $.post("/tag"+current, {}, function() { window.location.reload(); }); break;
+        case "T": $.post("/tag",{}, function() { window.location.reload(); }); break;
+
+        // quality tags
+        // 0 delete 
+        case "0": $.post("/tag"+current, {tag: 0}, function() { window.location.reload(); }); break;
+        case ")": $.post("/tag",{tag: 0}, function() { window.location.reload(); }); break; 
+        // 1 keep 
+        case "1": $.post("/tag"+current, {tag: 1}, function() { window.location.reload(); }); break;
+        case "!": $.post("/tag",{tag: 1}, function() { window.location.reload(); }); break;
+        // 2 sources work
+        case "2": $.post("/tag"+current, {tag: 2}, function() { window.location.reload(); }); break;
+        case "@": $.post("/tag",{tag: 2}, function() { window.location.reload(); }); break;
+        // 3 premaster portfolio
+        case "3": $.post("/tag"+current, {tag: 3}, function() { window.location.reload(); }); break;
+        case "#": $.post("/tag",{tag: 3}, function() { window.location.reload(); }); break;
+
+        // selected
+        case "s": tag("selected"); break; 
+        case "S": window.location.href = "/tag/selected"; break;
+
+        // empty tags
+        case "I": window.location.href = "/tag/empty"; break;
+
         //case "r": rotate(90); break;
         //case "R": rotate(270); break;
         case "f": rotate(180); break;
@@ -29,35 +56,6 @@
         case "c": window.location.href = "/crop"+images[idx]; break;
         case "e": $.post("/edit",{image: images[idx]}); break;
         case "p": $.get("/print/"+ images[idx]); break;
-
-        // generic tagging
-        case "t": $.get("/tag/select", function(t) { tag(t); }); break;
-        case "T": $.get("/tag/select", function(t) { window.location.href = "/tag/"+t; }); break;
-
-        // fast tagging
-        // delete 
-        case "1": tag("delete"); break;
-        //! (shift 1)
-        case "!": window.location.href = "/tag/delete"; break;
-        // keep 
-        case "2": tag("keep"); break;
-        //@ (shift 2)
-        case "@": window.location.href = "/tag/keep"; break; 
-        // work
-        case "3": tag("work"); break;
-        //# (shift 3)
-        case "#": window.location.href = "/tag/work"; break;
-        // portfolio
-        case "4": tag("portfolio"); break;
-        //$ (shift 4)
-        case "$": window.location.href = "/tag/portfolio"; break;
-
-        // selected
-        case "s": tag("selected"); break; 
-        case "S": window.location.href = "/tag/selected"; break;
-
-        // empty tags
-        case "0": window.location.href = "/tag/empty"; break;
       }
   });
 

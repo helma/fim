@@ -12,7 +12,7 @@ before '/index*' do
   @columns = 6
   @index = YAML.load_file("index.yaml")
   @tag = File.read("tag").chomp
-  @images = @index.collect{|k,v| k if v.include?(@tag)}.compact.sort
+  @images = @index.collect{|k,v| k if v.to_s.include?(@tag)}.compact.sort
   @current = File.read("current").chomp
   @current = @images.first unless @images.include? @current
   @selected = @index.collect{|k,v| k if v.include?("selected")}.compact
@@ -23,24 +23,58 @@ get '/index' do
 end
 
 # index
-get %r{/info(.*)} do |current|
-  #images = @@tag.find(@show_tag)
-  #"#{images[current.to_i]}: #{@@tag.tags(images[current.to_i])} (#{@show_tag} #{current}/#{images.size})"
-  "#{current}" #: #{@@tag.tags(images[current.to_i])} (#{@show_tag} #{current}/#{images.size})"
+get %r{/info(.*)} do |img|
+  exif = MiniExiftool.new(File.join('public',img))
+  "#{img}: #{exif.keywords}" 
 end
 
 # show
-get %r{/show(.*)} do |path|
-  @image = path
-  exif = MiniExiftool.new(File.join "public",path)
+get %r{/show(.*)} do |img|
+  @image = img
+  exif = MiniExiftool.new(File.join "public",img)
   @width = exif.imagewidth
   @height = exif.imageheight
   haml :show
 end
 
 # change current
-post %r{/current(.*)} do |cur|
-  File.open("current", "w+"){|f| f.puts cur}
+post %r{/current(.*)} do |img|
+  File.open("current", "w+"){|f| f.puts img}
+end
+
+# change index tag
+post '/tag' do 
+  parse_tags
+  File.open("tag", "w+"){|f| f.puts @tag}
+end
+
+# toggle image tag
+post %r{/tag(.*)} do |img|
+  parse_tags
+  exif = MiniExiftool.new(File.join('public',img))
+  index = YAML.load_file("index.yaml")
+  if exif.keywords.to_a.include?(@tag)
+    exif.keywords.to_a.delete @tag
+    index[img].delete @tag
+  else
+    q_tags = ["0","1","2","3"]
+    exif.keywords = exif.keywords.to_a - q_tags if q_tags.include?(@tag) # unique quality tags
+    exif.keywords.to_a << @tag
+    index[img] << @tag
+  end
+  exif.keywords.to_a.uniq!
+  exif.save
+  index[img].to_a.uniq!
+  File.open("index.yaml","w+"){|f| f.puts index.to_yaml}
+end
+
+def parse_tags
+  if params[:tag]
+    @tag = params[:tag]
+  else
+    tags = YAML.load_file("index.yaml").collect{|k,v| v}.flatten.compact.uniq.collect{|v| v.to_s}.sort #- ["delete","keep","portfolio","selected"]
+    @tag = `echo '#{(tags).join("\n")}' | dmenu -b `
+  end
 end
 
 =begin

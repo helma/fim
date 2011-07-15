@@ -1,0 +1,191 @@
+#!/usr/bin/env ruby
+require 'yaml'
+require 'gtk2'
+require 'mini_exiftool'
+
+@rows = 7
+@cols = 6
+@size = @rows*@cols
+
+def thumb(file)
+    file.sub(/images/,'thumbs').sub(/jpg/i,'png')
+end
+
+def move(offset)
+
+  curframe = @images.index(@current).modulo(@size)
+  @frames[curframe].set_state(Gtk::STATE_NORMAL) 
+
+  idx = @images.index(@current) + offset
+  idx = 0 if idx < 0
+  idx = @images.size-1 if idx >= @images.size
+  curframe += offset
+  @current = @images[idx]
+  File.open("current","w+"){|f| f.print @current}
+  if curframe >= 0 and curframe < @size #and idx > 0 and idx < @images.size#and @frames[curframe]
+    @frames[curframe].set_state(Gtk::STATE_ACTIVE)
+  else
+    redraw
+  end
+end
+
+def tag_input
+  tags = YAML.load_file("index.yaml").collect{|k,v| v}.flatten.compact.uniq.collect{|v| v.to_s}.sort
+  `echo '#{(tags).join("\n")}' | dmenu -b `
+end
+
+def tag(tag)
+  exif = MiniExiftool.new(@current)
+  index = YAML.load_file("index.yaml")
+  if exif.keywords.to_a.include?(tag)
+    exif.keywords.to_a.delete tag
+    index[@current].delete tag
+  else
+    q_tags = ["0","1","2","3"]
+    exif.keywords = exif.keywords.to_a - q_tags if q_tags.include?(tag) # unique quality tags
+    exif.keywords.to_a << tag
+    index[@current] << tag
+  end
+  exif.keywords.to_a.uniq!
+  exif.save
+  index[@current].to_a.uniq!
+  File.open("index.yaml","w+"){|f| f.puts index.to_yaml}
+  load_index
+end
+
+def redraw
+  @current = @images.first unless @images.include? @current
+  if @images.empty?
+    @first = 0
+  else
+    @first = @images.index(@current) - @images.index(@current).modulo(@size)
+  end
+  n = @first
+  @frames.each do |frame|
+    frame.set_state(Gtk::STATE_NORMAL) 
+    if @images[n]
+      if @images[n] == @current
+        frame.set_state(Gtk::STATE_ACTIVE)
+      end
+      frame.set_state(Gtk::STATE_SELECTED) if @selected.include? @current
+      frame.child.pixbuf = Gdk::Pixbuf.new thumb(@images[n])
+      #GC.start
+    else
+      frame.child.pixbuf = nil
+    end
+    n += 1
+  end
+end
+
+def load_index
+  index = YAML.load_file("index.yaml")
+  tag = File.read("tag").chomp
+  case tag
+  when "*"
+    @images = index.keys.sort
+  when "!"
+    @images = index.collect{|k,v| k if v.empty?}.compact.sort
+  else
+    @images = index.collect{|k,v| k if v.to_s.include?(tag)}.compact.sort
+  end
+  @current = File.read("current").chomp
+  @current = @images.first unless @images.include? @current
+  @selected = index.collect{|k,v| k if v.include?("@selected")}.compact
+  if @table
+    redraw
+  else
+    @table = Gtk::Table.new(7,6,true)
+    @frames = []
+    @first = @images.index(@current) - @images.index(@current).modulo(@size)
+
+    @win = Gtk::Window.new
+    @win.modify_bg(Gtk::STATE_NORMAL,Gdk::Color.parse("black"))
+    # draw_table
+    tw = (@win.screen.width)/@cols.to_f
+    th = (@win.screen.height/@rows.to_f)-2
+    n = @first
+    @rows.times do |r|
+      @cols.times do |c|
+        frame = Gtk::Frame.new
+        frame.modify_bg(Gtk::STATE_ACTIVE,Gdk::Color.parse("red"))
+        frame.modify_bg(Gtk::STATE_SELECTED,Gdk::Color.parse("yellow"))
+        frame.modify_bg(Gtk::STATE_NORMAL,Gdk::Color.parse("black"))
+        image = Gtk::Image.new 
+        if @images[n]
+          if @images[n] == @current
+            frame.set_state(Gtk::STATE_ACTIVE)
+          end
+          frame.set_state(Gtk::STATE_SELECTED) if @selected.include? @current
+          image.pixbuf = Gdk::Pixbuf.new thumb(@images[n])
+          #ratio = [tw/image.pixbuf.width, th/image.pixbuf.height].min
+          #image.pixbuf = image.pixbuf.scale(image.pixbuf.width*ratio, image.pixbuf.height*ratio)
+        end
+        frame.add image
+        @table.attach frame, c, c+1, r, r+1
+        @frames << frame
+        n += 1
+      end
+    end
+    @win.add(@table)
+  end
+end
+
+load_index
+@win.signal_connect("key-press-event") do |w,e|
+  case Gdk::Keyval.to_name(e.keyval)
+  when "q"
+    Gtk.main_quit
+  when "h"
+    move -1
+  when "l"
+    move 1
+  when "j"
+    move @cols
+  when "k"
+    move -@cols
+  when "b"
+    move -@size
+  when "f"
+    move @size
+  when "g"
+    @current = @images.first
+    redraw
+  when "G"
+    @current = @images.last
+    redraw
+  when "v"
+    `./fim-view`
+  when "i"
+    exif = MiniExiftool.new @current
+    `echo "#{@current}: #{exif.keywords}" |dmenu`
+  when "T"
+    tag = tag_input
+    File.open("tag", "w+"){|f| f.puts tag}
+    load_index
+  when "t"
+    tag tag_input
+  when /[0123]/
+    tag Gdk::Keyval.to_name(e.keyval)
+  #when "1"
+  when "2"
+  #when "3"
+  when "r"
+    puts `cp -v #{@current} #{@current}.original`
+    puts `jpegtran -copy all -rotate 90 #{@current}.original > #{@current}`
+    thumbnail = thumb @current
+    exif = MiniExiftool.new @current
+    height = 100
+    width = 16*height/9
+    ratio = [width/exif.imagewidth.to_f, height/exif.imageheight.to_f].min
+    width = (exif.imagewidth*ratio).round
+    height = (exif.imageheight*ratio).round
+    `mkdir -p #{File.dirname(thumbnail)}`
+    puts `convert #{@current} -thumbnail #{width}x#{height} -strip  #{thumbnail}`
+    curframe = @images.index(@current).modulo(@size)
+    @frames[curframe].child.pixbuf = Gdk::Pixbuf.new thumbnail
+  end
+end
+@win.signal_connect("destroy") { Gtk.main_quit }
+
+@win.show_all
+Gtk.main

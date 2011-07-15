@@ -12,7 +12,14 @@ before '/index*' do
   @columns = 6
   @index = YAML.load_file("index.yaml")
   @tag = File.read("tag").chomp
-  @images = @index.collect{|k,v| k if v.to_s.include?(@tag)}.compact.sort
+  case @tag
+  when "*"
+    @images = @index.keys.sort
+  when "!"
+    @images = @index.collect{|k,v| k if v.empty?}.compact.sort
+  else
+    @images = @index.collect{|k,v| k if v.to_s.include?(@tag)}.compact.sort
+  end
   @current = File.read("current").chomp
   @current = @images.first unless @images.include? @current
   @selected = @index.collect{|k,v| k if v.include?("selected")}.compact
@@ -68,11 +75,42 @@ post %r{/tag(.*)} do |img|
   File.open("index.yaml","w+"){|f| f.puts index.to_yaml}
 end
 
+# rotate
+post %r{/rotate(.*)} do |img|
+  image = File.join 'public', img
+  puts `cp -v #{image} #{image}.original`
+  `jpegtran -copy all -rotate #{params[:degrees]} #{image}.original > #{image}`
+  Thumb.new(img)
+end
+
+# crop
+get %r{/crop(.*)} do |img|
+  @image = img
+  exif = MiniExiftool.new(File.join "public",img)
+  @width = exif.imagewidth
+  @height = exif.imageheight
+  haml :crop
+end
+
+post "/crop" do 
+  original = File.join("public",params[:image])
+  cropped = original.sub(/.jpg/i,'crop.jpg')
+  puts "jpegtran -copy all -crop #{params[:width]}x#{params[:height]}+#{params[:x]}+#{params[:y]} #{original} > #{cropped}"
+  `jpegtran -copy all -crop #{params[:width]}x#{params[:height]}+#{params[:x]}+#{params[:y]} #{original} > #{cropped}` unless original == cropped
+  cropped.sub!(/public/,'')
+  Thumb.new(cropped)
+  File.open("current", "w+"){|f| f.puts cropped}
+  index = YAML.load_file("index.yaml")
+  index[cropped] = index[params[:image]] 
+  File.open("index.yaml","w+"){|f| f.puts index.to_yaml}
+  redirect "/index"
+end
+
 def parse_tags
   if params[:tag]
     @tag = params[:tag]
   else
-    tags = YAML.load_file("index.yaml").collect{|k,v| v}.flatten.compact.uniq.collect{|v| v.to_s}.sort #- ["delete","keep","portfolio","selected"]
+    tags = YAML.load_file("index.yaml").collect{|k,v| v}.flatten.compact.uniq.collect{|v| v.to_s}.sort
     @tag = `echo '#{(tags).join("\n")}' | dmenu -b `
   end
 end
@@ -140,36 +178,6 @@ post %r{/tag/(.*)} do |cur|
   @@tag.find(@show_tag).include?(image).to_s
 end
 
-# rotate
-get %r{/rotate(.*)} do |img|
-  #@current = img
-  image = File.join 'public', img
-  puts `cp -v #{image} #{image}.original`
-  `jpegtran -copy all -rotate #{params[:degrees]} #{image}.original > #{image}`
-  Thumb.new(img)
-end
-
-# crop
-get %r{/crop(.*)} do |img|
-  #@current = img
-  @image = img
-  exif = MiniExiftool.new(File.join "public",img)
-  @width = exif.imagewidth
-  @height = exif.imageheight
-  haml :crop
-end
-
-post "/crop" do 
-  original = File.join("public",params[:image])
-  cropped = original.sub(/.jpg/i,'crop.jpg')
-  puts "jpegtran -copy all -crop #{params[:width]}x#{params[:height]}+#{params[:x]}+#{params[:y]} #{original} > #{cropped}"
-  `jpegtran -copy all -crop #{params[:width]}x#{params[:height]}+#{params[:x]}+#{params[:y]} #{original} > #{cropped}` unless original == cropped
-  cropped.sub!(/public/,'')
-  Thumb.new(cropped)
-  @@tag.update(cropped)
-  #@current = cropped
-  redirect "/index"
-end
 
 # edit
 post "/edit" do

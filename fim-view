@@ -1,0 +1,37 @@
+#!/usr/bin/env ruby
+require 'yaml'
+require 'gtk2'
+
+=begin
+@index = YAML.load_file("index.yaml")
+@tag = File.read("tag").chomp
+case @tag
+when "*"
+  @images = @index.keys.sort
+when "!"
+  @images = @index.collect{|k,v| k if v.empty?}.compact.sort
+else
+  @images = @index.collect{|k,v| k if v.to_s.include?(@tag)}.compact.sort
+end
+@current = File.read("current").chomp
+@current = @images.first unless @images.include? @current
+@selected = @index.collect{|k,v| k if v.include?("selected")}.compact
+=end
+
+win = Gtk::Window.new
+win.modify_bg(Gtk::STATE_NORMAL,Gdk::Color.parse("black"))
+file = ARGV[0] if ARGV[0]
+file = File.read("current").chomp unless file
+image = Gtk::Image.new file
+ratio = [win.screen.width/image.pixbuf.width.to_f, win.screen.height.to_f/image.pixbuf.height].min
+image.pixbuf = image.pixbuf.scale(image.pixbuf.width*ratio, image.pixbuf.height*ratio)
+win.add(image)
+win.signal_connect("key-press-event") do |w,e|
+  case Gdk::Keyval.to_name(e.keyval)
+  when "q"
+    Gtk.main_quit
+  end
+end
+win.signal_connect("destroy") { Gtk.main_quit }
+win.show_all
+Gtk.main

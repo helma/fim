@@ -43,14 +43,14 @@
         case "#": $.post("/tag",{tag: 3}, function() { window.location.reload(); }); break;
 
         // selected
-        case "s": tag("selected"); break; 
-        case "S": window.location.href = "/tag/selected"; break;
+        case "s": $.post("/tag"+current, {tag: "selected"}, function() { window.location.reload(); }); break;
+        case "S": $.post("/tag",{tag: "selected"}, function() { window.location.reload(); }); break;
 
         // empty tags
-        case "I": window.location.href = "/tag/empty"; break;
+        case "I": $.post("/tag",{tag: ""}, function() { window.location.reload(); }); break;
 
-        //case "r": rotate(90); break;
-        //case "R": rotate(270); break;
+        case "r": rotate(90); break;
+        case "R": rotate(270); break;
         case "f": rotate(180); break;
 
         case "c": window.location.href = "/crop"+images[idx]; break;
@@ -95,6 +95,7 @@
     window.location.reload();
   }
 
+  /*
   function tag(t) {
     $.post("/tag/"+current, { tag: t }, function(result) {
       if (result == "false") {
@@ -105,12 +106,10 @@
     });
     if (t == "selected") { $("#img"+idx).toggleClass("selected"); };
   }
+  */
 
   function rotate(angle) {
-    $.post("/rotate"+images[idx], { degrees: angle }, function(thumb) {
-      var timestamp = new Date().getTime();
-      $("#img"+idx).attr("src",thumb+"?"+timestamp);
-    });
+    $.post("/rotate"+current, { degrees: angle }, function() { window.location.reload(); });
   }
 
   function makeTable() {

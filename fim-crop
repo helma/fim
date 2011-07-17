@@ -1,0 +1,86 @@
+#!/usr/bin/env ruby
+require 'yaml'
+require 'mini_exiftool'
+require 'gtk2'
+
+@win = Gtk::Window.new
+@win.modify_bg(Gtk::STATE_NORMAL,Gdk::Color.parse("black"))
+@file = ARGV[0] if ARGV[0]
+@file = File.read("current").chomp unless @file
+@pixbuf = Gdk::Pixbuf.new @file
+
+@step = 10
+@ratio = [@win.screen.width/@pixbuf.width.to_f, @win.screen.height.to_f/@pixbuf.height].min
+@pixbuf = @pixbuf.scale(@pixbuf.width*@ratio, @pixbuf.height*@ratio)
+@width = @pixbuf.width
+@height = 9*@width/16
+@x = 0
+@y = (@pixbuf.height-@height)/2
+
+@area = Gtk::DrawingArea.new
+@win.add(@area)
+
+def draw
+  @height = 9*@width/16
+  @x = 0 if @x < 0
+  @x = @pixbuf.width - @width if @x + @width > @pixbuf.width
+  @y = 0 if @y < 0
+  @y = @pixbuf.height - @height if @y + @height > @pixbuf.height
+  @area.window.clear
+  @area.window.draw_pixbuf nil, @pixbuf, @x, @y, @x,  @y, @width, @height, Gdk::RGB::DITHER_NORMAL, 0, 0
+end
+
+@area.signal_connect("expose_event") do
+  draw
+end
+
+@win.signal_connect("key-press-event") do |w,e|
+  case Gdk::Keyval.to_name(e.keyval)
+  when "q"
+    Gtk.main_quit
+  when "Escape"
+    Gtk.main_quit
+  when "h"
+    @x -= @step; draw
+  when "l"
+    @x += @step; draw
+  when "k"
+    @y -= @step; draw
+  when "j"
+    @y += @step; draw
+  when "minus"
+    @width -= @step; draw
+  when /equal|plus/
+    @width += @step; draw
+  when "0"
+    @width = @pixbuf.width; draw
+  when "comma"
+    @step = 1
+  when "period"
+    @step = 10
+  when "Return"
+    cropped = @file.sub(/.jpg/i,'crop.jpg')
+    puts `jpegtran -copy all -crop #{(@width/@ratio).round}x#{(@height/@ratio).round}+#{(@x/@ratio).round}+#{(@y/@ratio).round} #{@file} > #{cropped}`
+    unless ARGV[0]
+      File.open("current", "w+"){|f| f.puts cropped}
+      index = YAML.load_file("index.yaml")
+      exif = MiniExiftool.new cropped
+      index[cropped] = exif.keywords.to_a
+      File.open("index.yaml","w+"){|f| f.puts index.to_yaml}
+      thumbnail = cropped.sub(/images/,'thumbs').sub(/jpg/i,'png')
+      height = 100
+      width = 16*height/9
+      ratio = [width/exif.imagewidth.to_f, height/exif.imageheight.to_f].min
+      width = (exif.imagewidth*ratio).round
+      height = (exif.imageheight*ratio).round
+      `mkdir -p #{File.dirname(thumbnail)}`
+      puts `convert #{cropped} -thumbnail #{width}x#{height} -strip  #{thumbnail}`
+    end
+    Gtk.main_quit
+  else
+    puts Gdk::Keyval.to_name(e.keyval)
+  end
+end
+@win.signal_connect("destroy") { Gtk.main_quit }
+@win.show_all
+Gtk.main

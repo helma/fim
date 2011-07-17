@@ -69,6 +69,8 @@ def redraw
       end
       frame.set_state(Gtk::STATE_SELECTED) if @selected.include? @current
       frame.child.pixbuf = Gdk::Pixbuf.new thumb(@images[n])
+      ratio = [@tw/frame.child.pixbuf.width, @th/frame.child.pixbuf.height].min
+      frame.child.pixbuf = frame.child.pixbuf.scale(frame.child.pixbuf.width*ratio, frame.child.pixbuf.height*ratio)
       #GC.start
     else
       frame.child.pixbuf = nil
@@ -101,8 +103,8 @@ def load_index
     @win = Gtk::Window.new
     @win.modify_bg(Gtk::STATE_NORMAL,Gdk::Color.parse("black"))
     # draw_table
-    tw = (@win.screen.width)/@cols.to_f
-    th = (@win.screen.height/@rows.to_f)-2
+    @tw = (@win.screen.width)/@cols.to_f
+    @th = (@win.screen.height/@rows.to_f)-2
     n = @first
     @rows.times do |r|
       @cols.times do |c|
@@ -117,8 +119,8 @@ def load_index
           end
           frame.set_state(Gtk::STATE_SELECTED) if @selected.include? @current
           image.pixbuf = Gdk::Pixbuf.new thumb(@images[n])
-          #ratio = [tw/image.pixbuf.width, th/image.pixbuf.height].min
-          #image.pixbuf = image.pixbuf.scale(image.pixbuf.width*ratio, image.pixbuf.height*ratio)
+          ratio = [@tw/image.pixbuf.width, @th/image.pixbuf.height].min
+          image.pixbuf = image.pixbuf.scale(image.pixbuf.width*ratio, image.pixbuf.height*ratio)
         end
         frame.add image
         @table.attach frame, c, c+1, r, r+1
@@ -153,7 +155,7 @@ load_index
   when "G"
     @current = @images.last
     redraw
-  when "v"
+  when "Return"
     `./fim-view`
   when "i"
     exif = MiniExiftool.new @current
@@ -183,6 +185,9 @@ load_index
     puts `convert #{@current} -thumbnail #{width}x#{height} -strip  #{thumbnail}`
     curframe = @images.index(@current).modulo(@size)
     @frames[curframe].child.pixbuf = Gdk::Pixbuf.new thumbnail
+  when 'c'
+    `./fim-crop`
+    load_index
   end
 end
 @win.signal_connect("destroy") { Gtk.main_quit }

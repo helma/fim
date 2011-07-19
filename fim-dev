@@ -1,2 +1,0 @@
-#!/bin/sh
-shotgun application.rb -p 4567 

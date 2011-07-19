@@ -1,7 +1,43 @@
 #!/usr/bin/env ruby
-require 'find'
-require 'digest/md5'
+require 'yaml'
+require 'mini_exiftool'
 
+filenames = []
+YAML.load_file("index.yaml").keys.grep(/s90/).each do |f|
+  dup = filenames.grep(/\/#{File.basename f}/)
+  #uids = []
+  unless dup.empty?
+=begin
+    uid = MiniExiftool.new(f)["ImageUniqueID"] 
+    uids << uid 
+    dup.each { |d| uids << MiniExiftool.new(d)["ImageUniqueID"] }
+    unless uids.uniq.size == uids.size
+    #if uids.include? uid
+      puts '--'
+      puts f
+      puts dup.join("\n")
+    end
+    dupids = u
+    
+    exifs = []
+    exifs << MiniExiftool.new(f)
+    uids << MiniExiftool.new(f)["ImageUniqueID"] 
+    dup.each { |d| exifs << MiniExiftool.new(d) }
+    #exifs.each { |e| puts e.to_yaml }
+    exifs.each { |e| puts e["ImageUniqueID"] }
+=end
+    puts '--'
+    #puts f.sub(/^.*DCIM/,'')
+    #puts dup.collect{|d| d.sub(/^.*DCIM/,'') }.join("\n")
+    if f.sub(/^.*DCIM/,'') == dup.collect{|d| d.sub(/^.*DCIM/,'') }.join("\n")
+      puts dup
+      puts f
+    end
+  end
+  filenames << f
+end
+
+=begin
 def each_set_of_duplicates(*paths)
   sizes = {}
   Find.find(*paths) do |f|
@@ -21,4 +57,4 @@ end
 each_set_of_duplicates(*ARGV) do |f|
   puts "Duplicates: #{f.join(", ")}"
 end
-
+=end

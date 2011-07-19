@@ -1,0 +1,22 @@
+#!/usr/bin/env ruby
+require 'yajl'
+require 'yaml'
+
+index = {}
+q_tags = [0,1,2,3]
+Yajl::Parser.parse(`zsh -c "exiftool -j -fast2 -Keywords public/images/**/"`).each do |t|
+  img = t["SourceFile"]
+  tags = t["Keywords"]
+  tags = [] if tags.nil?
+  tags = [tags] unless tags.is_a? Array
+  tags.collect!{|t| t.to_s}
+  q_tags = ["0","1","2","3"]
+  i = tags & q_tags
+  puts img +": "+i.inspect if i.size>1
+  #tags.each do |t|
+  # `mkdir -p keywords/#{t}`
+  # `ln -s #{img} keywords/#{t}`
+  #nd
+  index[img] = tags if img =~ /jpg$|jpeg$/i
+end
+File.open('index.yaml', 'w+') { |f| f.puts index.to_yaml }

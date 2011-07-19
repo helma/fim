@@ -4,7 +4,7 @@ require 'mini_exiftool'
 require 'gtk2'
 
 @win = Gtk::Window.new
-@win.modify_bg(Gtk::STATE_NORMAL,Gdk::Color.parse("black"))
+#@win.modify_bg(Gtk::STATE_NORMAL,Gdk::Color.parse("black"))
 @file = ARGV[0] if ARGV[0]
 @file = File.read("current").chomp unless @file
 @pixbuf = Gdk::Pixbuf.new @file
@@ -21,11 +21,17 @@ require 'gtk2'
 @win.add(@area)
 
 def draw
-  @height = 9*@width/16
+  
   @x = 0 if @x < 0
-  @x = @pixbuf.width - @width if @x + @width > @pixbuf.width
   @y = 0 if @y < 0
-  @y = @pixbuf.height - @height if @y + @height > @pixbuf.height
+
+  @width = @pixbuf.width - @x if @x + @width > @pixbuf.width
+  @height = 9*@width/16
+  if @y + @height > @pixbuf.height
+    @height = @pixbuf.height - @y
+    @width = 16*@height/9
+  end
+
   @area.window.clear
   @area.window.draw_pixbuf nil, @pixbuf, @x, @y, @x,  @y, @width, @height, Gdk::RGB::DITHER_NORMAL, 0, 0
 end
@@ -67,14 +73,14 @@ end
       exif = MiniExiftool.new cropped
       index[cropped] = exif.keywords.to_a
       File.open("index.yaml","w+"){|f| f.puts index.to_yaml}
-      thumbnail = cropped.sub(/images/,'thumbs').sub(/jpg/i,'png')
-      height = 100
-      width = 16*height/9
-      ratio = [width/exif.imagewidth.to_f, height/exif.imageheight.to_f].min
-      width = (exif.imagewidth*ratio).round
-      height = (exif.imageheight*ratio).round
-      `mkdir -p #{File.dirname(thumbnail)}`
-      puts `convert #{cropped} -thumbnail #{width}x#{height} -strip  #{thumbnail}`
+#      thumbnail = cropped.sub(/images/,'thumbs').sub(/jpg/i,'png')
+#      height = 100
+#      width = 16*height/9
+#      ratio = [width/exif.imagewidth.to_f, height/exif.imageheight.to_f].min
+#      width = (exif.imagewidth*ratio).round
+#      height = (exif.imageheight*ratio).round
+#      `mkdir -p #{File.dirname(thumbnail)}`
+#      puts `convert #{cropped} -thumbnail #{width}x#{height} -strip  #{thumbnail}`
     end
     Gtk.main_quit
   else
@@ -82,5 +88,6 @@ end
   end
 end
 @win.signal_connect("destroy") { Gtk.main_quit }
+
 @win.show_all
 Gtk.main

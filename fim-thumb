@@ -1,0 +1,15 @@
+#!/usr/bin/env ruby
+require 'yaml'
+require 'mini_exiftool'
+
+ARGV.each do |file|
+  thumbnail = file.sub(/images/,'thumbs').sub(/jpg/i,'png')
+  exif = MiniExiftool.new file
+  height = 100
+  width = 16*height/9
+  ratio = [width/exif.imagewidth.to_f, height/exif.imageheight.to_f].min
+  width = (exif.imagewidth*ratio).round
+  height = (exif.imageheight*ratio).round
+  `mkdir -p #{File.dirname(thumbnail)}`
+  puts `convert #{file} -thumbnail #{width}x#{height} -strip  #{thumbnail}`
+end

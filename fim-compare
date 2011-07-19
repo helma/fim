@@ -1,0 +1,44 @@
+#!/usr/bin/env ruby
+require 'yaml'
+require 'gtk2'
+require 'mini_exiftool'
+
+@rows = 1
+@cols = 2
+@size = @rows*@cols
+
+
+@win = Gtk::Window.new
+@table = Gtk::Table.new(@rows,@cols,true)
+@frames = []
+
+@win.modify_bg(Gtk::STATE_NORMAL,Gdk::Color.parse("white"))
+# draw_table
+@tw = @win.screen.width/@cols.to_f
+@th = (@win.screen.height/@rows.to_f)-2
+n = 0
+@rows.times do |r|
+  @cols.times do |c|
+    frame = Gtk::Frame.new
+    image = Gtk::Image.new 
+    image.pixbuf = Gdk::Pixbuf.new ARGV[n]
+    ratio = [@tw/image.pixbuf.width, @th/image.pixbuf.height].min
+    image.pixbuf = image.pixbuf.scale(image.pixbuf.width*ratio, image.pixbuf.height*ratio)
+    frame.add image
+    @table.attach frame, c, c+1, r, r+1
+    @frames << frame
+    n += 1
+  end
+end
+@win.add(@table)
+
+@win.signal_connect("key-press-event") do |w,e|
+  case Gdk::Keyval.to_name(e.keyval)
+  when /^q$|Escape|Return/
+    Gtk.main_quit
+  end
+end
+@win.signal_connect("destroy") { Gtk.main_quit }
+
+@win.show_all
+Gtk.main

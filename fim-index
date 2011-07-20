@@ -41,7 +41,7 @@ def highlight
   @frames.each do |frame|
     frame.set_state(Gtk::STATE_NORMAL) 
     if @images[n]
-      frame.set_state(Gtk::STATE_SELECTED) if @selected.include? @images[n]
+      frame.set_state(Gtk::STATE_SELECTED) if @selected.include? @images[n] and @tag != "selected"
       frame.set_state(Gtk::STATE_ACTIVE) if @images[n] == @current
     end
     n += 1
@@ -52,6 +52,24 @@ def tag_input
   tags = @index.collect{|k,v| v}.flatten.compact.uniq.collect{|v| v.to_s}
   tags += ["*","!"]
   `echo '#{(tags.sort).join("\n")}' | dmenu -b `
+end
+
+def set_tag image, tag
+  exif = MiniExiftool.new image
+  keywords = exif.keywords.to_a
+  keywords = keywords - @q_tags if @q_tags.include?(tag) # unique quality tags
+  keywords << tag
+  keywords.uniq!
+  if keywords.empty?
+    exif.keywords = nil
+  elsif keywords.size == 1
+    exif.keywords = keywords.first
+  else
+    exif.keywords = keywords
+  end
+  exif.save
+  @index[image] = exif.keywords.to_a.collect{|t| t.to_s}
+  File.open("index.yaml","w+"){|f| f.puts @index.to_yaml}
 end
 
 def toggle_tag(tag)
@@ -75,7 +93,14 @@ def toggle_tag(tag)
   exif.save
   @index[@current] = exif.keywords.to_a.collect{|t| t.to_s}
   File.open("index.yaml","w+"){|f| f.puts @index.to_yaml}
-  load_index
+  unless keywords.include? @tag
+    idx = @images.index @current
+    @images.delete @current
+    @current = @images[idx]
+    File.open("current", "w+"){|f| f.print @current}
+    redraw
+  end
+  #load_index
 end
 
 =begin
@@ -113,14 +138,18 @@ end
 
 def load_index
   @index = YAML.load_file("index.yaml")
-  tag = File.read("tag").chomp
-  case tag
-  when "*"
-    @images = @index.keys.sort
-  when "!"
-    @images = @index.collect{ |k,v| i = v & @q_tags; k if i.empty? or i.size > 1 }.compact.sort
+  @tag = File.read("tag").chomp.to_s
+  if File.exists? "#{@tag}.yaml"
+    @images = YAML.load_file "#{@tag}.yaml"
   else
-    @images = @index.collect{|k,v| k if v.to_s.include?(tag)}.compact.sort
+  case @tag
+    when "*"
+      @images = @index.keys.sort
+    when "!"
+      @images = @index.collect{ |k,v| i = v & @q_tags; k if i.empty? or i.size > 1 }.compact.sort
+    else
+      @images = @index.collect{|k,v| k if v.to_s.include?(@tag)}.compact.sort
+    end
   end
   @current = File.read("current").chomp
   unless @images.include? @current
@@ -178,20 +207,32 @@ load_index
     move -@size
   when "space"
     move @size
-  when "g"
+  when /^g$|Home/
     @current = @images.first
     redraw
-  when "G"
+  when /^G$|End/
     @current = @images.last
     redraw
+  when "H"
+    if @tag == "selected"
+      i = @images.index(@current)
+      @images.insert(i-1,@images.delete_at(i)) unless i == 0
+      redraw
+    end
+  when "L"
+    if @tag == "selected"
+      i = @images.index(@current)
+      @images.insert(i+1,@images.delete_at(i)) unless i == @images.size-1
+    redraw
+    end
   when "Return"
     `./fim-view`
   when "equal"
     exif = MiniExiftool.new @current
     `echo "#{@current}: #{exif.keywords}" |dmenu`
   when 'slash'
-    tag = tag_input
-    File.open("tag", "w+"){|f| f.print tag}
+    @tag = tag_input
+    File.open("tag", "w+"){|f| f.print @tag}
     load_index
   when "t"
     toggle_tag tag_input
@@ -215,6 +256,7 @@ load_index
     File.open("tag", "w+"){|f| f.print "selected"}
     load_index
   when "m"
+=begin
     if File.read("tag").chomp == "selected"
       id = @index.collect{|k,v| v.grep(/motiv/).sub(/motiv/,'').to_i unless v.grep(/motiv/).empty?}.flatten.uniq.sort.last
       id = -1 unless id
@@ -226,6 +268,14 @@ load_index
         @index[i] = exif.keywords.to_a.collect{|t| t.to_s}
       end
       File.open("index.yaml","w+"){|f| f.puts @index.to_yaml}
+    end
+=end
+  when "e"
+    if @tag == "selected"
+      name = tag_input
+      File.open("#{name}.yaml","w+"){|f| f.puts @images.to_yaml}
+      @images.each{|i| set_tag i, name}
+      @images.each{|i| set_tag i, "4"}
     end
   when "r"
     puts `cp -v #{@current} #{@current}.original`
@@ -242,7 +292,7 @@ load_index
     clipboard.text = @current
     clipboard.store
   else
-    #puts Gdk::Keyval.to_name(e.keyval)
+    puts Gdk::Keyval.to_name(e.keyval)
   end
 end
 @win.signal_connect("destroy") { Gtk.main_quit }

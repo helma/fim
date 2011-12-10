@@ -1,4 +1,5 @@
 fim
 ===
 
-Fast image manager with vi keybindings.
+Minimal ruby-gtk image manager with vi keybindings.
+Configuration and documentation in source code.

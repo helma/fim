@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+require 'yaml'
+require 'mini_exiftool'
+require File.join ENV['HOME'],"src/fim","config.rb"
+
+@index = YAML.load_file(@indexfile)
+@images = @index.collect{|k,v| k if v.to_s.include?(ARGV[0])}.compact.sort
+@images.each do |i|
+  exif = MiniExiftool.new(i)
+  keywords = exif.keywords.to_a
+  keywords.delete ARGV[0]
+  keywords.uniq!
+  if keywords.empty?
+    exif.keywords = nil
+  elsif keywords.size == 1
+    exif.keywords = keywords.first
+  else
+    exif.keywords = keywords
+  end
+  exif.save
+  @index[i] = exif.keywords.to_a.collect{|t| t.to_s}
+end
+File.open(@indexfile,"w+"){|f| f.puts @index.to_yaml}

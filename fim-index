@@ -2,6 +2,7 @@
 require 'yaml'
 require 'gtk2'
 require 'mini_exiftool'
+require File.join ENV['HOME'],"src/fim","config.rb"
 
 @rows = 6
 @cols = 6
@@ -15,20 +16,50 @@ class Gdk::Pixbuf
   end
 end
 
+class MiniExiftool
+  def save_keywords keywords
+    keywords.uniq!
+    if keywords.empty?
+      self.keywords = nil
+    elsif keywords.size == 1
+      self.keywords = keywords.first
+    else
+      self.keywords = keywords
+    end
+    self.save
+  end
+end
+
+def collection?
+  @tag.match(/^[A-Z]/) ? true : false
+  #@tag == @tag.capitalize and @tag.match(/^[A-Z]/)# !~ /^\d$/ and @tag != '!' and @tag != '*'
+end
+
 def thumb(file)
-    thumbnail = file.sub(/images/,'thumbs').sub(/jpg/i,'png')
-    `./fim-thumb #{file}` unless File.exists? thumbnail
-    thumbnail
+  thumbnail = file.sub(/#{@imagedir}/,@thumbdir).sub(/jpg/i,'png')
+  `fim-thumb #{file}` unless File.exists? thumbnail
+  thumbnail
 end
 
 def move(offset)
+  if collection?
+    i = @images.index(@current)
+    if i+offset >= 0 and i+offset < @images.size
+      @images.insert(i+offset,@images.delete_at(i))
+      redraw
+      File.open(File.join(@dir,"#{@tag}.yaml"),"w+"){|f| f.puts @images.to_yaml}
+    end
+  end
+end
+
+def select(offset)
   curframe = @images.index(@current).modulo(@size)
   idx = @images.index(@current) + offset
   idx = 0 if idx < 0
   idx = @images.size-1 if idx >= @images.size
   curframe += offset
   @current = @images[idx]
-  File.open("current","w+"){|f| f.print @current}
+  File.open(@currentfile,"w+"){|f| f.print @current}
   if curframe >= 0 and curframe < @size #and idx > 0 and idx < @images.size#and @frames[curframe]
     highlight
   else
@@ -41,7 +72,7 @@ def highlight
   @frames.each do |frame|
     frame.set_state(Gtk::STATE_NORMAL) 
     if @images[n]
-      frame.set_state(Gtk::STATE_SELECTED) if @selected.include? @images[n] and @tag != "selected"
+      frame.set_state(Gtk::STATE_SELECTED) if @selected.include? @images[n] and @tag != "+"
       frame.set_state(Gtk::STATE_ACTIVE) if @images[n] == @current
     end
     n += 1
@@ -50,8 +81,15 @@ end
 
 def tag_input
   tags = @index.collect{|k,v| v}.flatten.compact.uniq.collect{|v| v.to_s}
+  current_tags = MiniExiftool.new(@current).keywords.to_a.collect{|t| t.to_s}
+  tags.collect!{|t| current_tags.include?(t.to_s) ? "+#{t}" : t.to_s}
   tags += ["*","!"]
-  `echo '#{(tags.sort).join("\n")}' | dmenu -b `
+  `echo '#{(tags.sort).join("\n")}' | dmenu -b `.chomp.sub(/\+/, '')
+end
+
+def save_index image, keywords
+  @index[image] = keywords.to_a.collect{|t| t.to_s}
+  File.open(@indexfile,"w+"){|f| f.puts @index.to_yaml}
 end
 
 def set_tag image, tag
@@ -59,65 +97,52 @@ def set_tag image, tag
   keywords = exif.keywords.to_a
   keywords = keywords - @q_tags if @q_tags.include?(tag) # unique quality tags
   keywords << tag
-  keywords.uniq!
-  if keywords.empty?
-    exif.keywords = nil
-  elsif keywords.size == 1
-    exif.keywords = keywords.first
-  else
-    exif.keywords = keywords
-  end
-  exif.save
-  @index[image] = exif.keywords.to_a.collect{|t| t.to_s}
-  File.open("index.yaml","w+"){|f| f.puts @index.to_yaml}
+  exif.save_keywords keywords
+  save_index image, exif.keywords
+end
+
+def remove_current_tag
+  exif = MiniExiftool.new @current
+  keywords = exif.keywords.to_a
+  keywords.delete @tag
+  exif.save_keywords keywords
+  save_index @current, exif.keywords
+  idx = @images.index @current
+  @images.delete @current
+  @current = @images[idx]
+  File.open(@currentfile, "w+"){|f| f.print @current}
+  File.open(File.join(@dir,"#{@tag}.yaml"),"w+"){|f| f.puts @images.to_yaml}
 end
 
 def toggle_tag(tag)
-  exif = MiniExiftool.new(@current)
-  keywords = exif.keywords.to_a
-  tag = tag.to_s
-  if keywords.include?(tag)
-    keywords.delete tag
-  else
-    keywords = keywords - @q_tags if @q_tags.include?(tag) # unique quality tags
-    keywords << tag
+  unless tag.empty?
+    exif = MiniExiftool.new(@current)
+    keywords = exif.keywords.to_a
+    tag = tag.chomp.to_s
+    if keywords.include?(tag)
+      keywords.delete tag
+    else
+      keywords = keywords - @q_tags if @q_tags.include?(tag) # unique quality tags
+      keywords << tag
+    end
+    exif.save_keywords keywords
+    save_index @current, exif.keywords
+    unless keywords.include? @tag
+      idx = @images.index @current
+      @images.delete @current
+      @current = @images[idx]
+      File.open(@currentfile, "w+"){|f| f.print @current}
+      @images.delete @current
+      File.open(File.join(@dir,"#{@tag}.yaml"),"w+"){|f| f.puts @images.to_yaml}
+      redraw
+    end
   end
-  keywords.uniq!
-  if keywords.empty?
-    exif.keywords = nil
-  elsif keywords.size == 1
-    exif.keywords = keywords.first
-  else
-    exif.keywords = keywords
-  end
-  exif.save
-  @index[@current] = exif.keywords.to_a.collect{|t| t.to_s}
-  File.open("index.yaml","w+"){|f| f.puts @index.to_yaml}
-  unless keywords.include? @tag
-    idx = @images.index @current
-    @images.delete @current
-    @current = @images[idx]
-    File.open("current", "w+"){|f| f.print @current}
-    redraw
-  end
-  #load_index
 end
-
-=begin
-def tag(tag)
-#  if File.read("tag").chomp == 'selected'
-#    @images.each { |i| toggle_tag i, tag }
-#  else
-    toggle_tag @current, tag
-#  end
-  load_index
-end
-=end
 
 def redraw
   unless @images.include? @current
     @current = @images.first
-    File.open("current", "w+"){|f| f.print @current}
+    File.open(@currentfile, "w+"){|f| f.print @current}
   end
   if @images.empty?
     @first = 0
@@ -137,12 +162,15 @@ def redraw
 end
 
 def load_index
-  @index = YAML.load_file("index.yaml")
-  @tag = File.read("tag").chomp.to_s
-  if File.exists? "#{@tag}.yaml"
-    @images = YAML.load_file "#{@tag}.yaml"
+  @index = YAML.load_file(@indexfile)
+  @tag = File.read(@tagfile).chomp.to_s
+  if collection?
+    seq_file = File.join(@dir,"#{@tag}.yaml")
+    File.open(seq_file,"w+"){|f| f.puts [].to_yaml} unless File.exists? seq_file
+    @images = YAML.load_file(File.join(@dir,"#{@tag}.yaml")) | @index.collect{|k,v| k if v.to_s.include?(@tag)}.compact.sort
+    File.open(seq_file,"w+"){|f| f.puts @images.to_yaml}
   else
-  case @tag
+    case @tag
     when "*"
       @images = @index.keys.sort
     when "!"
@@ -151,12 +179,12 @@ def load_index
       @images = @index.collect{|k,v| k if v.to_s.include?(@tag)}.compact.sort
     end
   end
-  @current = File.read("current").chomp
+  @current = File.read(@currentfile).chomp
   unless @images.include? @current
     @current = @images.first
-    File.open("current", "w+"){|f| f.print @current}
+    File.open(@currentfile, "w+"){|f| f.print @current}
   end
-  @selected = @index.collect{|k,v| k if v.include?("selected")}.compact
+  @selected = @index.collect{|k,v| k if v.include?("+")}.compact
   if @table
     redraw
   else
@@ -196,105 +224,104 @@ load_index
   when /^q$|Escape/
     Gtk.main_quit
   when /^h$|Left/
-    move -1
+    select -1
   when /^l$|Right/
-    move 1
+    select 1
   when /^j$|Down/
-    move @cols
+    select @cols
   when /^k$|Up/
-    move -@cols
+    select -@cols
   when "b"
-    move -@size
+    select -@size
   when "space"
-    move @size
+    select @size
   when /^g$|Home/
     @current = @images.first
     redraw
   when /^G$|End/
     @current = @images.last
     redraw
+  when "K"
+    move -@cols
+  when "J"
+    move @cols
   when "H"
-    if @tag == "selected"
-      i = @images.index(@current)
-      @images.insert(i-1,@images.delete_at(i)) unless i == 0
-      redraw
-    end
+    move -1
   when "L"
-    if @tag == "selected"
-      i = @images.index(@current)
-      @images.insert(i+1,@images.delete_at(i)) unless i == @images.size-1
-    redraw
-    end
+    move 1
   when "Return"
-    `./fim-view`
+    `fim-view`
   when "equal"
     exif = MiniExiftool.new @current
     `echo "#{@current}: #{exif.keywords}" |dmenu`
   when 'slash'
     @tag = tag_input
-    File.open("tag", "w+"){|f| f.print @tag}
+    File.open(@tagfile, "w+"){|f| f.print @tag}
     load_index
   when "t"
     toggle_tag tag_input
-  when /^\d$/
-    toggle_tag Gdk::Keyval.to_name(e.keyval)
+  when "T"
+    tag = tag_input
+    @images.each{|i| set_tag i, tag}
+  when "BackSpace"
+    remove_current_tag
+    load_index
+  when "0"
+    toggle_tag "0"
   when "parenright"
-    File.open("tag", "w+"){|f| f.print 0}
+    File.open(@tagfile, "w+"){|f| f.print 0}
     load_index
+  when "1"
+    toggle_tag "1"
   when "exclam"
-    File.open("tag", "w+"){|f| f.print 1}
+    File.open(@tagfile, "w+"){|f| f.print 1}
     load_index
+  when "2"
+    toggle_tag "2"
   when "at"
-    File.open("tag", "w+"){|f| f.print 2}
+    File.open(@tagfile, "w+"){|f| f.print 2}
     load_index
+  when "3"
+    toggle_tag "3"
   when "numbersign"
-    File.open("tag", "w+"){|f| f.print 3}
+    File.open(@tagfile, "w+"){|f| f.print 3}
+    load_index
+  when "4"
+    toggle_tag "4"
+  when "dollar"
+    File.open(@tagfile, "w+"){|f| f.print 4}
     load_index
   when "s"
-    toggle_tag "selected"
+    toggle_tag "+"
   when "S"
-    File.open("tag", "w+"){|f| f.print "selected"}
+    File.open(@tagfile, "w+"){|f| f.print "+"}
     load_index
-  when "m"
-=begin
-    if File.read("tag").chomp == "selected"
-      id = @index.collect{|k,v| v.grep(/motiv/).sub(/motiv/,'').to_i unless v.grep(/motiv/).empty?}.flatten.uniq.sort.last
-      id = -1 unless id
-      id += 1
-      @images.each do |i|
-        exif = MiniExiftool.new i
-        exif.keywords.to_a << "motiv#{id}"
-        exif.save
-        @index[i] = exif.keywords.to_a.collect{|t| t.to_s}
-      end
-      File.open("index.yaml","w+"){|f| f.puts @index.to_yaml}
-    end
-=end
-  when "e"
-    if @tag == "selected"
-      name = tag_input
-      File.open("#{name}.yaml","w+"){|f| f.puts @images.to_yaml}
+  when "w"
+    if collection? 
+      name = tag_input 
+      File.open(File.join(@dir,"#{name}.yaml"),"w+"){|f| f.puts @images.to_yaml}
       @images.each{|i| set_tag i, name}
       @images.each{|i| set_tag i, "4"}
     end
   when "r"
     puts `cp -v #{@current} #{@current}.original`
     puts `jpegtran -copy all -rotate 90 #{@current}.original > #{@current}`
-    `./fim-thumb #{@current}`
+    `fim-thumb #{@current}`
     curframe = @images.index(@current).modulo(@size)
     @frames[curframe].child.pixbuf = Gdk::Pixbuf.new(thumb @current).adjust(@tw,@th)
   when 'c'
-    `./fim-crop`
+    `fim-crop`
     load_index
   when 'p'
-    `./fim-print #{@current}`
+    `fim-print #{@current}`
   when "y"
     clipboard.text = @current
     clipboard.store
   else
-    puts Gdk::Keyval.to_name(e.keyval)
+    #puts '"'+Gdk::Keyval.to_name(e.keyval)+'"'
   end
 end
+
 @win.signal_connect("destroy") { Gtk.main_quit }
 
 @win.show_all

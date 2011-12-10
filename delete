@@ -1,9 +1,0 @@
-#!/usr/bin/env ruby
-require 'yaml'
-require 'fileutils'
-FileUtils.cp("index.yaml","index.yaml.bak")
-i = YAML.load_file("index.yaml")
-#puts i["delete"].collect{|f| File.join(File.dirname(__FILE__),"public",f)}.each{|f| `ls #{f}`}
-FileUtils.mv(i["delete"].collect{|f| File.join(File.dirname(__FILE__),"public",f)},"/home/ch/.trash")
-i["delete"] = []
-File.open("index.yaml", "w+"){|f| f.puts i.to_yaml}

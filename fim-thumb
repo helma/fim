@@ -1,9 +1,16 @@
 #!/usr/bin/env ruby
 require 'yaml'
 require 'mini_exiftool'
+require File.join ENV['HOME'],"src/fim","config.rb"
 
 ARGV.each do |file|
-  thumbnail = file.sub(/images/,'thumbs').sub(/jpg/i,'png')
+  thumbnail = file.sub(/#{@imagedir}/,@thumbdir).sub(/jpg/i,'png')
+=begin
+  print file
+  print " -> "
+  puts thumbnail
+  unless File.exists? thumbnail
+=end
   exif = MiniExiftool.new file
   height = 100
   width = 16*height/9
@@ -11,5 +18,7 @@ ARGV.each do |file|
   width = (exif.imagewidth*ratio).round
   height = (exif.imageheight*ratio).round
   `mkdir -p #{File.dirname(thumbnail)}`
-  puts `convert #{file} -thumbnail #{width}x#{height} -strip  #{thumbnail}`
+  `convert #{file} -thumbnail #{width}x#{height} -strip  #{thumbnail}`
+  #end
+  #puts thumbnail
 end

@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+require 'yaml'
+require 'mini_exiftool'
+require File.join ENV['HOME'],"src/fim","config.rb"
+
+@images = YAML.load_file(File.join(@dir,"#{ARGV[0]}.yaml"))
+#@images.each{|i| puts i; puts MiniExiftool.new(i).keywords.to_a.to_yaml}
+puts @images.collect{|i| {i => MiniExiftool.new(i).keywords.to_a.sort}}.to_yaml

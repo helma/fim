@@ -1,0 +1,3 @@
+#!/bin/sh
+
+rsync -avi /media/usb/DCIM/ ~/images/s90b/

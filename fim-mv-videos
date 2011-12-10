@@ -1,0 +1,6 @@
+#!/bin/zsh
+
+for m in `ls ~/**/*.MOV`
+do
+  mv -iv $m `echo $m|sed 's/images/video/'`
+done

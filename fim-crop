@@ -2,10 +2,11 @@
 require 'yaml'
 require 'mini_exiftool'
 require 'gtk2'
+require File.join ENV['HOME'],"src/fim","config.rb"
 
 @win = Gtk::Window.new
 @file = ARGV[0] if ARGV[0]
-@file = File.read("current").chomp unless @file
+@file = File.read(@currentfile).chomp unless @file
 @pixbuf = Gdk::Pixbuf.new @file
 
 @step = 10
@@ -67,11 +68,11 @@ end
     cropped = @file.sub(/.jpg/i,'crop.jpg')
     puts `jpegtran -copy all -crop #{(@width/@ratio).round}x#{(@height/@ratio).round}+#{(@x/@ratio).round}+#{(@y/@ratio).round} #{@file} > #{cropped}`
     unless ARGV[0]
-      File.open("current", "w+"){|f| f.puts cropped}
-      index = YAML.load_file("index.yaml")
+      File.open(@currentfile, "w+"){|f| f.puts cropped}
+      index = YAML.load_file(@indexfile)
       exif = MiniExiftool.new cropped
       index[cropped] = exif.keywords.to_a
-      File.open("index.yaml","w+"){|f| f.puts index.to_yaml}
+      File.open(@indexfile,"w+"){|f| f.puts index.to_yaml}
     end
     Gtk.main_quit
   else

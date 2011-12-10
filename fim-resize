@@ -1,0 +1,17 @@
+#!/usr/bin/env ruby
+require 'yaml'
+require 'mini_exiftool'
+require File.join ENV['HOME'],"src/fim","config.rb"
+
+ppi = 300
+file = ARGV.first
+plot = File.basename(file,File.extname(file)) + ".tiff"
+plot = File.join @dir,"plots",plot
+width = ARGV.last.to_f*ppi*0.393700787 # cm
+exif = MiniExiftool.new file
+height = 9*width/16
+ratio = width/exif.imagewidth.to_f
+#p "#{exif.imagewidth}x#{exif.imageheight}"
+#p plot
+#p "#{width.round}x#{height.round}"
+puts `convert #{file} -resize #{width.round}x#{height.round} #{plot}`

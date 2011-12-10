@@ -1,0 +1,15 @@
+#!/usr/bin/env ruby
+require 'yajl'
+require 'yaml'
+require File.join ENV['HOME'],"src/fim","config.rb"
+
+index = {}
+Yajl::Parser.parse(`zsh -c "exiftool -j -fast2 -Keywords #{@imagedir}/**/"`).each do |t|
+  img = t["SourceFile"]
+  tags = t["Keywords"]
+  tags = [] if tags.nil?
+  tags = [tags] unless tags.is_a? Array
+  tags.collect!{|t| t.to_s}
+  index[img] = tags if img =~ /jpg$|jpeg$|png$/i and img !~ /thumb/
+end
+File.open(@indexfile, 'w+') { |f| f.puts index.to_yaml }

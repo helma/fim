@@ -5,8 +5,8 @@ require File.join ENV['HOME'],"src/fim","config.rb"
 
 win = Gtk::Window.new
 win.modify_bg(Gtk::STATE_NORMAL,Gdk::Color.parse("black"))
-file = ARGV[0] if ARGV[0]
-file = File.read(@currentfile).chomp unless file
+ARGV[0] ?  file = ARGV[0] : file = @index[@tag][@current]
+puts file
 image = Gtk::Image.new file
 ratio = [win.screen.width/image.pixbuf.width.to_f, win.screen.height.to_f/image.pixbuf.height].min
 image.pixbuf = image.pixbuf.scale(image.pixbuf.width*ratio, image.pixbuf.height*ratio)

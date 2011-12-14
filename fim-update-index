@@ -1,15 +1,32 @@
 #!/usr/bin/env ruby
-require 'yajl'
-require 'yaml'
 require File.join ENV['HOME'],"src/fim","config.rb"
+require File.join ENV['HOME'],"src/fim","flickr.rb"
 
 index = {}
 Yajl::Parser.parse(`zsh -c "exiftool -j -fast2 -Keywords #{@imagedir}/**/"`).each do |t|
   img = t["SourceFile"]
-  tags = t["Keywords"]
-  tags = [] if tags.nil?
-  tags = [tags] unless tags.is_a? Array
-  tags.collect!{|t| t.to_s}
-  index[img] = tags if img =~ /jpg$|jpeg$|png$/i and img !~ /thumb/
+  if img =~ /jpg$|jpeg$|png$/i
+    tags = t["Keywords"]
+    tags = [] if tags.nil?
+    tags = [tags] unless tags.is_a? Array
+    tags.collect!{|t| t.to_s}
+    tags << '_' if (tags & @q_tags).empty?
+    tags.each do |t| 
+      index[t.to_s] = [] unless index[t.to_s]
+      index[t.to_s] << img 
+    end
+  end
 end
+
+index.each_key { |t| index[t] = index[t].sort }
+
+login = flickr.test.login
+flickr.photosets.getList.each do |s|
+  tag =  s.title.capitalize
+  photos = flickr.photosets.getPhotos(:photoset_id => s.id)["photo"].collect{|p| @flickr_ids.key(p.id.to_i)}
+  puts "fim-flickr mismatch for tag #{tag}" unless index[tag].size == photos.size
+  index[tag] = photos
+end
+
 File.open(@indexfile, 'w+') { |f| f.puts index.to_yaml }
+`fim-update-thumbs`

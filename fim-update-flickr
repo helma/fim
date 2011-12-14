@@ -1,14 +1,5 @@
 #!/usr/bin/env ruby
-require 'yaml'
-require 'mini_exiftool'
-require 'flickraw'
 require File.join ENV['HOME'],"src/fim","config.rb"
-
-FlickRaw.api_key = File.read(File.join(@flickrdir, "key")).chomp
-FlickRaw.shared_secret = File.read(File.join(@flickrdir, "secret")).chomp
-
-flickr.access_token = File.read(File.join(@flickrdir, "access-token")).chomp
-flickr.access_secret = File.read(File.join(@flickrdir, "access-secret")).chomp
 login = flickr.test.login
 
 
@@ -16,7 +7,6 @@ license_text = "Copyright in silico. This work is licensed under a Creative Comm
 license_uri = "http://creativecommons.org/licenses/by-sa/3.0/"
 
 @collections = Dir["#{@dir}/[A-Z]*"]
-@flickr_ids = YAML.load_file File.join(@flickrdir,"index.yaml")
 flickr.photosets.getList.each{ |s| flickr.photosets.delete(:photoset_id => s.id)}
 @collections.each do |c|
   @set = nil

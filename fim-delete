@@ -1,10 +1,8 @@
 #!/usr/bin/env ruby
-require 'yaml'
-require 'fileutils'
 require File.join ENV['HOME'],"src/fim","config.rb"
 
 #FileUtils.cp(@indexfile,"#{@indexfile}.bak")
-YAML.load_file(@indexfile).collect{|i,t| i if t.include?("0")}.compact.each do |i|
+YAML.load_file(@indexfile).collect{|t,i| i if t.include?("0")}.compact.each do |i|
   puts "delete #{i}"
 end
 #i.collect

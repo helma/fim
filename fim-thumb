@@ -5,12 +5,6 @@ require File.join ENV['HOME'],"src/fim","config.rb"
 
 ARGV.each do |file|
   thumbnail = file.sub(/#{@imagedir}/,@thumbdir).sub(/jpg/i,'png')
-=begin
-  print file
-  print " -> "
-  puts thumbnail
-  unless File.exists? thumbnail
-=end
   exif = MiniExiftool.new file
   height = 100
   width = 16*height/9
@@ -19,6 +13,4 @@ ARGV.each do |file|
   height = (exif.imageheight*ratio).round
   `mkdir -p #{File.dirname(thumbnail)}`
   `convert #{file} -thumbnail #{width}x#{height} -strip  #{thumbnail}`
-  #end
-  #puts thumbnail
 end

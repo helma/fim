@@ -3,7 +3,7 @@ require 'gtk2'
 require File.join ENV['HOME'],"src/fim","config.rb"
 
 @win = Gtk::Window.new
-ARGV[0] ? @file = ARGV[0] : @file = @index[@tag][@current]
+@file = @index[@tag][@current]
 @pixbuf = Gdk::Pixbuf.new @file
 
 @step = 10
@@ -64,16 +64,14 @@ end
   when "Return"
     cropped = @file.sub(/.jpg/i,'crop.jpg')
     puts `jpegtran -copy all -crop #{(@width/@ratio).round}x#{(@height/@ratio).round}+#{(@x/@ratio).round}+#{(@y/@ratio).round} #{@file} > #{cropped}`
-    unless ARGV[0]
-      `fim-thumb #{cropped}` 
-      exif = MiniExiftool.new cropped
-      keywords = exif.keywords.to_a.collect{|t| t.to_s}
-      keywords -= @q_tags 
-      keywords << "3"
-      exif.save_keywords keywords
-      keywords.each{|t| @index[t] << cropped}
-      File.open(@indexfile,"w+"){|f| f.puts @index.to_yaml}
-    end
+    `fim-thumb #{cropped}` 
+    exif = MiniExiftool.new cropped
+    keywords = exif.keywords.to_a.collect{|t| t.to_s}
+    keywords -= @q_tags 
+    keywords << "3"
+    exif.save_keywords keywords
+    keywords.each{|t| @index[t] << cropped}
+    File.open(@indexfile,"w+"){|f| f.puts @index.to_yaml}
     Gtk.main_quit
   else
     #puts Gdk::Keyval.to_name(e.keyval)

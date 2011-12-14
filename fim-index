@@ -69,7 +69,7 @@ end
 
 def select_tag tag
   @tag = tag
-  File.open(@tagfile, "w+"){|f| f.print 0}
+  File.open(@tagfile, "w+"){|f| f.print @tag}
   draw
 end
 
@@ -82,8 +82,6 @@ def tag_input
 end
 
 def update_index keywords
-  puts current_image
-  puts keywords
   keywords.each do |t|
     @index[t] = [] unless @index[t]
     @index[t] << current_image unless @index[t].include? current_image
@@ -225,12 +223,6 @@ draw
     add_tag "4"
   when "dollar"
     select_tag "4"
-=begin
-  when "s"
-    add_tag "+"
-  when "S"
-    select_tag "+"
-=end
   when "r"
     puts `cp -v #{current_image} #{current_image}.original`
     puts `jpegtran -copy all -rotate 90 #{current_image}.original > #{current_image}`

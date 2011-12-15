@@ -12,6 +12,6 @@ require 'mini_exiftool'
 @q_tags = ["0","1","2","3","4"]
 
 @index = YAML.load_file(@indexfile)
+@index.keys.each{|t| @index.delete t if @index[t].empty?}
 @tag = File.read(@tagfile).chomp.to_s
-#@tag == "*" ? @index[@tag] = @index.values.flatten.sort : @index[@tag] = @index[@tag]
 @current = File.read(@currentfile).chomp.to_i

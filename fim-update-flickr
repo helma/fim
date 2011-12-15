@@ -1,57 +1,57 @@
 #!/usr/bin/env ruby
 require File.join ENV['HOME'],"src/fim","config.rb"
+require File.join ENV['HOME'],"src/fim","flickr.rb"
+
+exit unless ARGV[0].match(/^[A-Z]/)
+setname = ARGV[0].downcase.gsub(/_/,' ')
 login = flickr.test.login
 
 
 license_text = "Copyright in silico. This work is licensed under a Creative Commons Attribution-ShareAlike 3.0 Unported License."
 license_uri = "http://creativecommons.org/licenses/by-sa/3.0/"
 
-@collections = Dir["#{@dir}/[A-Z]*"]
-flickr.photosets.getList.each{ |s| flickr.photosets.delete(:photoset_id => s.id)}
-@collections.each do |c|
-  @set = nil
-  @images = YAML.load_file c
-  @images.each do |i| 
-    export = File.join @flickrdir, i.sub(/#{@imagedir}/,'')+".png"
-    tags = MiniExiftool.new(i).keywords.to_a - ["0","1","2","3","4","+"]
-    tags = tags.collect{|t| t if t != t.capitalize}.compact
-    puts "Tags empty: #{i}" if tags.empty?
-    tags << "photo"
-    puts "Keep "+i if @flickr_ids[i]
-    unless @flickr_ids[i]
-      #puts tags.inspect
-      unless File.exists? export
-        puts "Creating #{export}"
-        `mkdir -p #{File.dirname export}`
-        `convert #{i} -strip -resize 1024x576 #{export}` 
-      end
-      puts "Update tags for #{export}"
-      `exiftool -overwrite_original \
-        -xmp:Creator='in silico' \
-        -xmp:WebStatement='#{license_uri}' \
-        -xmp:Rights='#{license_text}' \
-        -iptc:By-line='in silico' \
-        -iptc:CopyrightNotice='#{license_text}' \
-        -iptc:keywords='#{tags.join(", ")}'\
-        -exif:Artist='in silico' \
-        -exif:Copyright='#{license_text}' \
-        -keywords='#{tags.join(", ")}'\
-       #{export}` 
-      puts "Upload to flickr: #{export}"
-      id = flickr.upload_photo export, :tags => tags
-      @flickr_ids[i] = id
-      puts id
+#@collections = Dir["#{@dir}/[A-Z]*"]
+#flickr.photosets.getList.each{ |s| flickr.photosets.delete(:photoset_id => s.id)}
+@index[ARGV[0]].each do |i|
+  export = File.join @flickrdir, i.sub(/#{@imagedir}/,'')+".png"
+  tags = MiniExiftool.new(i).keywords.to_a - ["0","1","2","3","4","+","+","_"]
+  tags = tags.collect{|t| t unless t.match(/^[A-Z]/)}.compact
+  puts "Tags empty: #{i}" if tags.empty?
+  tags << "photo"
+  puts "Keep "+i if @flickr_ids[i]
+  unless @flickr_ids[i]
+    #puts tags.inspect
+    unless File.exists? export
+      puts "Creating #{export}"
+      `mkdir -p #{File.dirname export}`
+      `convert #{i} -strip -resize 1024x576 #{export}` 
     end
-    id = @flickr_ids[i]
-    puts "Updating tags for #{id}"
-    flickr.photos.setTags(:photo_id => id, :tags => tags)
-    puts "Adding #{i} to #{File.basename(c,".yaml").downcase}"
-    @set = flickr.photosets.create(:title => File.basename(c,".yaml").downcase, :primary_photo_id => id).id unless @set
-    begin
-      flickr.photosets.addPhoto(:photoset_id => @set, :photo_id => id)
-    rescue => m
-      puts m.inspect
-    end
+    puts "Update tags for #{export}"
+    `exiftool -overwrite_original \
+      -xmp:Creator='in silico' \
+      -xmp:WebStatement='#{license_uri}' \
+      -xmp:Rights='#{license_text}' \
+      -iptc:By-line='in silico' \
+      -iptc:CopyrightNotice='#{license_text}' \
+      -iptc:keywords='#{tags.join(", ")}'\
+      -exif:Artist='in silico' \
+      -exif:Copyright='#{license_text}' \
+      -keywords='#{tags.join(", ")}'\
+     #{export}` 
+    puts "Upload to flickr: #{export}"
+    id = flickr.upload_photo export, :tags => tags
+    @flickr_ids[i] = id
+    puts id
+  end
+  id = @flickr_ids[i]
+  puts "Updating tags for #{id}"
+  flickr.photos.setTags(:photo_id => id, :tags => tags)
+  puts "Adding #{i} to #{setname}"
+  @set = flickr.photosets.create(:title => setname, :primary_photo_id => id).id unless @set
+  begin
+    flickr.photosets.addPhoto(:photoset_id => @set, :photo_id => id)
+  rescue => m
+    puts m.inspect
   end
 end
 File.open(File.join(@flickrdir,"index.yaml"),"w+"){|f| f.puts @flickr_ids.to_yaml}

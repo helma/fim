@@ -4,9 +4,8 @@ require 'mini_exiftool'
 require File.join ENV['HOME'],"src/fim","config.rb"
 
 exit unless ARGV.size == 2
-@index = YAML.load_file(@indexfile)
-@images = @index.collect{|k,v| k if v.to_s.include?(ARGV[0])}.compact.sort
-@images.each do |i|
+@index[ARGV[1]] = []
+@index[ARGV[0]].each do |i|
   exif = MiniExiftool.new(i)
   keywords = exif.keywords.to_a
   keywords.delete ARGV[0]
@@ -18,8 +17,7 @@ exit unless ARGV.size == 2
     exif.keywords = keywords
   end
   exif.save
-  @index[i] = exif.keywords.to_a.collect{|t| t.to_s}
+  @index[ARGV[1]] << i
 end
 File.open(@indexfile,"w+"){|f| f.puts @index.to_yaml}
 File.open(@tagfile,"w+"){|f| f.puts ARGV[1].to_s} if ARGV[0] == File.read(@tagfile).chomp
-`cd #{@dir} ; mv #{ARGV[0]+".yaml"} #{ARGV[1]+".yaml"}`

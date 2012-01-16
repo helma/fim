@@ -1,0 +1,26 @@
+#!/usr/bin/env ruby
+require File.join ENV['HOME'],"src/fim","config.rb"
+
+def update_index keywords, i
+  keywords.each do |t|
+    @index[t] = [] unless @index[t]
+    @index[t] << i unless @index[t].include? i
+  end
+  (@index.keys - keywords).each{|t| @index[t].delete i}
+  @index['_'] << i if (keywords & @q_tags).empty?
+end
+
+def add_tag tag, i
+  tag = tag.chomp.to_s
+  exif = MiniExiftool.new(i)
+  keywords = exif.keywords.to_a.collect{|t| t.to_s}
+  keywords -= @q_tags if @q_tags.include? tag or tag.match(/^[A-Z]/) # remove @q_tags
+  keywords << tag
+  keywords << "4" if tag.match(/^[A-Z]/)
+  exif.save_keywords keywords
+  update_index keywords, i
+end
+
+@index[ARGV[0]].each { |i| add_tag ARGV[1], i }
+File.open(@indexfile,"w+"){|f| f.puts @index.to_yaml}
+

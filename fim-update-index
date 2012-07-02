@@ -3,7 +3,10 @@ require File.join ENV['HOME'],"src/fim","config.rb"
 require File.join ENV['HOME'],"src/fim","flickr.rb"
 
 index = {}
+index['*'] = []
+@start_time = Time.now
 Yajl::Parser.parse(`zsh -c "exiftool -j -fast2 -Keywords #{@imagedir}/**/"`).each do |t|
+  @exif_time = Time.now
   img = t["SourceFile"]
   if img =~ /jpg$|jpeg$|png$/i
     tags = t["Keywords"]
@@ -14,19 +17,40 @@ Yajl::Parser.parse(`zsh -c "exiftool -j -fast2 -Keywords #{@imagedir}/**/"`).eac
     tags.each do |t| 
       index[t.to_s] = [] unless index[t.to_s]
       index[t.to_s] << img 
+      index['*'] << img
     end
+  else
+    puts "Not a standard image file: #{img}"
   end
 end
 
 index.each_key { |t| index[t] = index[t].sort }
 
-login = flickr.test.login
-flickr.photosets.getList.each do |s|
-  tag =  s.title.capitalize
-  photos = flickr.photosets.getPhotos(:photoset_id => s.id)["photo"].collect{|p| @flickr_ids.key(p.id.to_i)}
-  puts "fim-flickr mismatch for tag #{tag}" unless index[tag].size == photos.size
-  index[tag] = photos
+@index_time = Time.now
+
+=begin
+begin
+  login = flickr.test.login
+  flickr.photosets.getList.each do |s|
+    tag =  s.title.capitalize
+    photos = flickr.photosets.getPhotos(:photoset_id => s.id)["photo"].collect{|p| @flickr_ids.key(p.id.to_i)}
+    puts "fim-flickr mismatch for tag #{tag}" unless index[tag] and index[tag].size == photos.size
+    index[tag] = photos
+  end
+rescue
+  puts "Failed to update flickr tags"
 end
+=end
 
 File.open(@indexfile, 'w+') { |f| f.puts index.to_yaml }
+@flickr_time = Time.now
 `fim-update-thumbs`
+@thumb_time = Time.now
+@total_time = Time.now
+
+puts "exif:   #{@exif_time-@start_time}"
+puts "index:  #{@index_time-@exif_time}"
+puts "flickr: #{@flickr_time-@index_time}"
+puts "thumbs: #{@thumb_time-@flickr_time}"
+puts "---"
+puts "total:  #{@total_time-@start_time}"

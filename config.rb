@@ -11,7 +11,9 @@ require 'mini_exiftool'
 @currentfile = File.join @dir, "current"
 @q_tags = ["0","1","2","3","4"]
 
-@index = YAML.load_file(@indexfile)
+`fim-update-index` unless File.exist? @indexfile
+@index = YAML.load_file(@indexfile) 
 @index.keys.each{|t| @index.delete t if @index[t].empty?}
+
 @tag = File.read(@tagfile).chomp.to_s
 @current = File.read(@currentfile).chomp.to_i

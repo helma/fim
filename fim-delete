@@ -1,12 +1,9 @@
 #!/usr/bin/env ruby
 require File.join ENV['HOME'],"src/fim","config.rb"
 
-#FileUtils.cp(@indexfile,"#{@indexfile}.bak")
-YAML.load_file(@indexfile).collect{|t,i| i if t.include?("0")}.compact.each do |i|
-  puts "delete #{i}"
+@index['0'].each do |i|
+  `trash #{i}`
 end
-#i.collect
-#puts i["delete"].collect{|f| File.join(File.dirname(__FILE__),"public",f)}.each{|f| `ls #{f}`}
-#FileUtils.mv(i["delete"].collect{|f| File.join(File.dirname(__FILE__),"public",f)},"/home/ch/.trash")
-#i["delete"] = []
-#File.open("index.yaml", "w+"){|f| f.puts i.to_yaml}
+
+@index['0'] = []
+File.open(@indexfile,"w+"){|f| f.puts @index.to_yaml}

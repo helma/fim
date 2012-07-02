@@ -1,6 +1,6 @@
 #!/bin/sh
 
 rsync -avi /media/usb/DCIM/ ~/images/images/s90/
+fim-mv-videos
 fim-update-index
-fim-update-thumbs
-#rm -rf /media/usb
+#rm -rf /media/usb/DCIM/*

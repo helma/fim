@@ -7,10 +7,11 @@ require File.join ENV['HOME'],"src/fim","config.rb"
 @pixbuf = Gdk::Pixbuf.new @file
 
 @step = 10
+@aspect = 9.to_f/16
 @ratio = [@win.screen.width/@pixbuf.width.to_f, @win.screen.height.to_f/@pixbuf.height].min
 @pixbuf = @pixbuf.scale(@pixbuf.width*@ratio, @pixbuf.height*@ratio)
 @width = @pixbuf.width
-@height = 9*@width/16
+@height = @aspect*@width
 @x = 0
 @y = (@pixbuf.height-@height)/2
 
@@ -23,10 +24,10 @@ def draw
   @y = 0 if @y < 0
 
   @width = @pixbuf.width - @x if @x + @width > @pixbuf.width
-  @height = 9*@width/16
+  @height = @aspect*@width
   if @y + @height > @pixbuf.height
     @height = @pixbuf.height - @y
-    @width = 16*@height/9
+    @width = @height/@aspect
   end
 
   @area.window.clear
@@ -43,6 +44,10 @@ end
     Gtk.main_quit
   when "Escape"
     Gtk.main_quit
+  when "r"
+    @aspect = 9.to_f/16
+  when "s"
+    @aspect = 1.to_f
   when "h"
     @x -= @step; draw
   when "l"
@@ -66,7 +71,7 @@ end
     puts `jpegtran -copy all -crop #{(@width/@ratio).round}x#{(@height/@ratio).round}+#{(@x/@ratio).round}+#{(@y/@ratio).round} #{@file} > #{cropped}`
     `fim-thumb #{cropped}` 
     exif = MiniExiftool.new cropped
-    keywords = exif.keywords.to_a.collect{|t| t.to_s}
+    keywords = [exif.keywords].flatten.uniq.collect{|t| t.to_s}
     keywords -= @q_tags 
     keywords << "3"
     exif.save_keywords keywords

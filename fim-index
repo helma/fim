@@ -48,7 +48,11 @@ def select(offset)
 end
 
 def draw
-  @index[@tag].sort unless @tag.match(/^[A-Z]/)
+  if @index[@tag].nil?
+    @tag = "*" 
+    File.open(@tagfile, "w+"){|f| f.print @tag}
+  end
+  @index[@tag].sort unless @tag.match(/^[A-Z]/) 
   if @current >= @index[@tag].size
     @current = @index[@tag].size - 1
     File.open(@currentfile,"w+"){|f| f.print @current}
@@ -68,16 +72,19 @@ def draw
 end
 
 def select_tag tag
-  @tag = tag
+  @tag = tag unless tag.empty?
   File.open(@tagfile, "w+"){|f| f.print @tag}
   draw
 end
 
 def tag_input
-  tags = @index.keys - @q_tags
-  current_tags = MiniExiftool.new(current_image).keywords.to_a.collect{|t| t.to_s}
-  tags.collect!{|t| current_tags.include?(t.to_s) ? "+#{t}" : t.to_s}
-  tags << "*"
+  tags = @index.keys #- @q_tags
+  img_tags = [MiniExiftool.new(current_image).keywords].flatten.uniq
+  if img_tags
+    current_tags = img_tags.collect{|t| t.to_s}
+    tags.collect!{|t| current_tags.include?(t.to_s) ? "+#{t}" : t.to_s}
+  end
+  #tags << "*"
   `echo '#{(tags.sort).join("\n")}' | dmenu -b `.chomp.sub(/\+/, '')
 end
 
@@ -95,7 +102,7 @@ end
 def add_tag tag, image=current_image
   tag = tag.chomp.to_s
   exif = MiniExiftool.new(image)
-  keywords = exif.keywords.to_a.collect{|t| t.to_s}
+  keywords = [exif.keywords].flatten.uniq.collect{|t| t.to_s}
   keywords -= @q_tags if @q_tags.include? tag or tag.match(/^[A-Z]/) # remove @q_tags
   keywords << tag
   keywords << "4" if tag.match(/^[A-Z]/)
@@ -106,7 +113,7 @@ end
 def delete_tag tag, image=current_image
   tag = tag.chomp.to_s
   exif = MiniExiftool.new(image)
-  keywords = exif.keywords.to_a.collect{|t| t.to_s}
+  keywords = [exif.keywords].flatten.uniq.collect{|t| t.to_s}
   keywords.delete tag
   keywords << '_' if (keywords & @q_tags).empty?
   if tag.match(/^[A-Z]/)
@@ -123,7 +130,7 @@ def write_index
 end
 
 def current_image
-  @index[@tag][@current]
+  @index[@tag][@current] if @index[@tag] 
 end
 
 def quit

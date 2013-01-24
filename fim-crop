@@ -3,7 +3,7 @@ require 'gtk2'
 require File.join ENV['HOME'],"src/fim","config.rb"
 
 @win = Gtk::Window.new
-@file = @index[@tag][@current]
+ARGV.empty? ?  @file = @index[@tag][@current] : @file = ARGV[0]
 @pixbuf = Gdk::Pixbuf.new @file
 
 @step = 10
@@ -78,8 +78,6 @@ end
     keywords.each{|t| @index[t] << cropped}
     File.open(@indexfile,"w+"){|f| f.puts @index.to_yaml}
     Gtk.main_quit
-  else
-    #puts Gdk::Keyval.to_name(e.keyval)
   end
 end
 @win.signal_connect("destroy") { Gtk.main_quit }

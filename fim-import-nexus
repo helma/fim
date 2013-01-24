@@ -1,0 +1,7 @@
+#!/bin/sh
+
+#adb pull /mnt/sdcard/DCIM/Camera ~/images/images/nexus
+rsync -avi ~/Dropbox/Camera\ Uploads/ ~/images/images/nexus/
+fim-mv-videos
+fim-update-index
+#rm -rf /media/usb/DCIM/*

@@ -72,8 +72,12 @@ def draw
 end
 
 def select_tag tag
+  image = @index[@tag][@current]
   @tag = tag unless tag.empty?
   File.open(@tagfile, "w+"){|f| f.print @tag}
+  @current = @index[@tag].index image
+  @current ||= 0
+  File.open(@currentfile,"w+"){|f| f.print @current}
   draw
 end
 
@@ -241,6 +245,8 @@ draw
     draw
   when 'p'
     `fim-print #{current_image}`
+  when 'e'
+    `fim-pd`
   when "y"
     clipboard.text = current_image
     clipboard.store

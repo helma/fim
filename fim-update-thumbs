@@ -2,5 +2,5 @@
 require File.join ENV['HOME'],"src/fim","config.rb"
 YAML.load_file(@indexfile).values.flatten.uniq.each do |file|
   thumbnail = file.sub(/#{@imagedir}/,@thumbdir).sub(/jpg/i,'png')
-  `fim-thumb #{file}` unless File.exists? thumbnail
+  `fim-thumb "#{file}"` unless File.exists? thumbnail
 end

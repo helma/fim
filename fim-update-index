@@ -5,26 +5,28 @@ require File.join ENV['HOME'],"src/fim","flickr.rb"
 index = {}
 index['*'] = []
 @start_time = Time.now
-Yajl::Parser.parse(`zsh -c "exiftool -j -fast2 -Keywords #{@imagedir}/**/"`).each do |t|
+#JSON.parse(File.read "./exif.json").each do |t|
+JSON.parse(`zsh -c "exiftool -j -fast2 -CreateDate -Keywords #{@imagedir}/**/"`).each do |t|
   @exif_time = Time.now
   img = t["SourceFile"]
   if img =~ /jpg$|jpeg$|png$/i
-    tags = t["Keywords"]
-    tags = [] if tags.nil?
-    tags = [tags] unless tags.is_a? Array
+    date = t["CreateDate"]
+    date ||= t["SourceFile"].sub(/#{@imagedir}\//,'').sub(/\//,':')
+    tags = [t["Keywords"]].flatten
+    tags ||= [] 
     tags.collect!{|t| t.to_s}
     tags << '_' if (tags & @q_tags).empty?
     tags.each do |t| 
-      index[t.to_s] = [] unless index[t.to_s]
-      index[t.to_s] << img 
-      index['*'] << img
+      index[t.to_s] ||= [] 
+      index[t.to_s] << [img,date]
+      index['*'] << [img,date]
     end
   else
     puts "Not a standard image file: #{img}"
   end
 end
 
-index.each_key { |t| index[t] = index[t].sort }
+index.each_key { |t| index[t] = index[t].sort{|a,b| a.last <=> b.last}.collect{|i| i.first}.uniq }
 
 @index_time = Time.now
 
@@ -44,7 +46,7 @@ end
 
 File.open(@indexfile, 'w+') { |f| f.puts index.to_yaml }
 @flickr_time = Time.now
-`fim-update-thumbs`
+#`fim-update-thumbs`
 @thumb_time = Time.now
 @total_time = Time.now
 

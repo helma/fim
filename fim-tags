@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+require File.join ENV['HOME'],"src/fim","config.rb"
+
+puts @index.keys.sort.join("\n")

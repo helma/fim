@@ -1,4 +1,4 @@
-require 'yajl'
+require 'json'
 require 'yaml'
 require 'mini_exiftool'
 

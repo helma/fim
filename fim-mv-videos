@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-for m in `ls ~/images/images/s90/**/*.(MOV|THM|mp4)`
+for m in `ls ~/images/images/(s90|nexus)/**/*.(MOV|THM|mp4)`
 do
   p=`echo $m:h|sed 's/images\/images/videos/'`
   mkdir -p $p

@@ -1,0 +1,21 @@
+#!/usr/bin/env ruby
+require File.join ENV['HOME'],"src/fim","config.rb"
+
+    pd_dir = "/home/ch/src/pd/multiimage"
+    begin
+      n = Dir["#{pd_dir}/[0-9]*"].collect{|d| d.split("/").last}.sort.last.to_i+1
+    rescue
+      n = 0
+    end
+    dir = File.join pd_dir,n.to_s
+    `mkdir #{dir}`
+    #`ln -s #{@index[@tag].join " "} #{dir}/`
+    i = 0
+    @index[@tag].each do |f|
+      `ln -s #{f} #{File.join dir}/i#{i}.jpeg`
+      #puts "ln -s #{f} #{File.join dir}/i#{i}.jpeg"
+      i += 1
+    end
+
+#puts @tag
+#puts @index[@tag].to_yaml

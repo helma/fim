@@ -1,22 +1,20 @@
 #!/usr/bin/env ruby
 require 'yaml'
 require 'gtk2'
-require File.join ENV['HOME'],"src/fim","config.rb"
+require_relative "gui.rb"
 
-win = Gtk::Window.new
-win.modify_bg(Gtk::STATE_NORMAL,Gdk::Color.parse("black"))
 ARGV[0] ?  file = ARGV[0] : file = @index[@tag][@current]
-puts file
-image = Gtk::Image.new file
-ratio = [win.screen.width/image.pixbuf.width.to_f, win.screen.height.to_f/image.pixbuf.height].min
-image.pixbuf = image.pixbuf.scale(image.pixbuf.width*ratio, image.pixbuf.height*ratio)
-win.add(image)
-win.signal_connect("key-press-event") do |w,e|
-  case Gdk::Keyval.to_name(e.keyval)
-  when "q"
-    Gtk.main_quit
-  end
+
+@image = Gtk::Image.new file
+
+def draw file=@index[@tag][@current]
+  pixbuf = Gdk::Pixbuf.new file
+  ratio = [@win.screen.width/pixbuf.width.to_f, @win.screen.height.to_f/pixbuf.height].min
+  pixbuf = pixbuf.scale(pixbuf.width*ratio, pixbuf.height*ratio)
+  @image.pixbuf = pixbuf
 end
-win.signal_connect("destroy") { Gtk.main_quit }
-win.show_all
+
+@win.add(@image)
+draw file
+@win.show_all
 Gtk.main

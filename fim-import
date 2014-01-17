@@ -1,8 +1,0 @@
-#!/bin/sh
-
-rsync -avi ~/Dropbox/Camera\ Uploads/ ~/images/images/nexus/
-rsync -avi /media/usb/DCIM/ ~/images/images/s90/
-fim-mv-videos
-fim-update-index
-trash ~/Dropbox/Camera\ Uploads/*
-trash /media/usb/DCIM/*

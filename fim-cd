@@ -1,0 +1,18 @@
+#!/usr/bin/env ruby
+require 'micro-optparse'
+
+basedir = File.join ENV['HOME'], "images"
+Parser.new do |p|
+  p.banner = "select fim working directory under #{basedir}"
+end.process!
+
+collection = File.join basedir, "collection"
+subdir = ARGV.shift
+abort "Argument needed." unless subdir and not subdir.empty?
+dir = File.join basedir, subdir
+
+if File.exists?(dir) 
+  File.open(collection,"w+"){|f| f.print dir }
+else
+  abort "'#{dir}' does not exist."
+end

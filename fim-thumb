@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 require 'yaml'
 require 'mini_exiftool'
-require File.join ENV['HOME'],"src/fim","config.rb"
+require_relative "fim.rb"
 
 ARGV.each do |file|
   thumbnail = file.sub(/#{@imagedir}/,@thumbdir).sub(/jpg/i,'png')
@@ -11,6 +11,6 @@ ARGV.each do |file|
   ratio = [width/exif.imagewidth.to_f, height/exif.imageheight.to_f].min
   width = (exif.imagewidth*ratio).round
   height = (exif.imageheight*ratio).round
-  `mkdir -p #{File.dirname(thumbnail)}`
-  `convert "#{file}" -thumbnail #{width}x#{height} -strip  "#{thumbnail}"`
+  `/usr/bin/mkdir -p #{File.dirname(thumbnail)}`
+  `/usr/bin/convert "#{file}" -thumbnail #{width}x#{height} -strip "#{thumbnail}"`
 end

@@ -1,0 +1,35 @@
+#!/usr/bin/env ruby
+require_relative 'fim.rb'
+
+@tag = "private"
+@priv_idx = {}
+priv = @index[@tag]
+
+class String
+  def to_private
+    self.sub /art/, "private"
+  end
+end
+
+@i = {}
+priv.each_with_index do |f,i|
+  # mv image
+  FileUtils.mkdir_p File.dirname(f.to_private)
+  FileUtils.mv f, f.to_private
+  # mv thumbs
+  t = thumb(i)
+  FileUtils.mkdir_p File.dirname(t.to_private)
+  FileUtils.mv t, t.to_private
+end
+
+@priv_idx[@tag] = @index.delete(@tag).collect{|f| f.to_private}
+
+@idx = {}
+@index.each do |tag,imgs|
+  @priv_idx[tag] = (priv & imgs).collect{|f| f.to_private}
+  @idx[tag] = imgs - priv 
+end
+
+@index = @idx
+write_index
+File.open(@indexfile.to_private,"w+"){|f| f.puts @priv_idx.to_yaml}

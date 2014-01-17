@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
-require File.join ENV['HOME'],"src/fim","config.rb"
+require_relative "fim.rb"
 YAML.load_file(@indexfile).values.flatten.uniq.each do |file|
   thumbnail = file.sub(/#{@imagedir}/,@thumbdir).sub(/jpg/i,'png')
-  `fim-thumb "#{file}"` unless File.exists? thumbnail
+  `/home/ch/src/fim/fim-thumb "#{file}"` unless File.exists? thumbnail
 end

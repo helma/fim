@@ -2,7 +2,7 @@
 require 'yaml'
 require 'gtk2'
 require 'mini_exiftool'
-require File.join ENV['HOME'],"src/fim","config.rb"
+require_relative "fim.rb"
 
 @rows = 1
 @cols = 2

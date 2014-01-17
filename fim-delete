@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-require File.join ENV['HOME'],"src/fim","config.rb"
+require_relative "fim.rb"
 
 @index['0'].each do |i|
   `trash #{i}`

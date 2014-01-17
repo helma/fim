@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 require 'yaml'
 require 'mini_exiftool'
-require File.join ENV['HOME'],"src/fim","config.rb"
+require_relative "fim.rb"
 
 ppi = 300
 file = ARGV.first

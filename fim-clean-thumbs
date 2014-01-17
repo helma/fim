@@ -1,0 +1,6 @@
+#!/usr/bin/env ruby
+require_relative "fim.rb"
+Dir["#{@thumbdir}/**/*"].each do |t|
+  i = t.sub(/#{@thumbdir}/,@imagedir).sub(/png$/,'')
+  FileUtils.rm t if Dir["#{i}*"].empty?
+end

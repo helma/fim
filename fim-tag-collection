@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-require File.join ENV['HOME'],"src/fim","config.rb"
+require_relative "fim.rb"
 
 def update_index keywords, i
   keywords.each do |t|
@@ -14,7 +14,7 @@ def add_tag tag, i
   tag = tag.chomp.to_s
   exif = MiniExiftool.new(i)
   keywords = exif.keywords.to_a.collect{|t| t.to_s}
-  keywords -= @q_tags if @q_tags.include? tag or tag.match(/^[A-Z]/) # remove @q_tags
+  #keywords -= @q_tags if @q_tags.include? tag or tag.match(/^[A-Z]/) # remove @q_tags
   keywords << tag
   keywords << "4" if tag.match(/^[A-Z]/)
   exif.save_keywords keywords

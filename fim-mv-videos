@@ -1,8 +1,8 @@
-#!/bin/zsh
+#!/bin/env ruby
+require 'fileutils'
 
-for m in `ls ~/images/images/(s90|nexus)/**/*.(MOV|THM|mp4)`
-do
-  p=`echo $m:h|sed 's/images\/images/videos/'`
-  mkdir -p $p
-  mv -iuv $m $p
-done
+Dir["#{ENV['HOME']}/images/images/**/*.{MOV,THM,mp4}"].each do |movie|
+  dest = movie.sub(/images\/images/,"videos")
+  FileUtils.mkpath File.dirname(dest)
+  FileUtils.mv movie, dest
+end

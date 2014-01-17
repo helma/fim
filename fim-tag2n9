@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+require_relative "fim.rb"
+seq = (1..32).to_a.shuffle.collect{|i| "%02d" % i}
+@index[@tag].each_with_index do |f,i|
+  n9_file = File.join "/media/n9/DCIM", seq[i] + "-" + File.basename(f) 
+  puts `sudo cp -v #{f} #{n9_file}`
+end

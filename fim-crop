@@ -1,13 +1,14 @@
 #!/usr/bin/env ruby
 require 'gtk2'
-require File.join ENV['HOME'],"src/fim","config.rb"
+require_relative "fim.rb"
 
 @win = Gtk::Window.new
 ARGV.empty? ?  @file = @index[@tag][@current] : @file = ARGV[0]
 @pixbuf = Gdk::Pixbuf.new @file
 
 @step = 10
-@aspect = 9.to_f/16
+#@aspect = 9.to_f/16
+@aspect = 2.to_f/3
 @ratio = [@win.screen.width/@pixbuf.width.to_f, @win.screen.height.to_f/@pixbuf.height].min
 @pixbuf = @pixbuf.scale(@pixbuf.width*@ratio, @pixbuf.height*@ratio)
 @width = @pixbuf.width

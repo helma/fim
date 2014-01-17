@@ -1,4 +1,4 @@
 #!/usr/bin/env ruby
-require File.join ENV['HOME'],"src/fim","config.rb"
+require_relative "fim.rb"
 
 puts @index.keys.sort.join("\n")

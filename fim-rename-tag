@@ -1,13 +1,18 @@
 #!/usr/bin/env ruby
 require 'yaml'
 require 'mini_exiftool'
-require File.join ENV['HOME'],"src/fim","config.rb"
+require_relative "fim.rb"
 
 exit unless ARGV.size == 2
-@index[ARGV[1]] = []
-@index[ARGV[0]].each do |i|
+@index[ARGV[1].to_s] = []
+puts @index.to_yaml
+@index[ARGV[0].to_s].each do |i|
   exif = MiniExiftool.new(i)
-  keywords = exif.keywords.to_a
+  begin
+    keywords = exif.keywords.to_a
+  rescue
+    keywords = [exif.keywords]
+  end
   keywords.delete ARGV[0]
   keywords << ARGV[1]
   keywords.uniq!
@@ -17,7 +22,7 @@ exit unless ARGV.size == 2
     exif.keywords = keywords
   end
   exif.save
-  @index[ARGV[1]] << i
+  @index[ARGV[1].to_s] << i
 end
 File.open(@indexfile,"w+"){|f| f.puts @index.to_yaml}
-File.open(@tagfile,"w+"){|f| f.puts ARGV[1].to_s} if ARGV[0] == File.read(@tagfile).chomp
+File.open(@tagfile,"w+"){|f| f.puts ARGV[1].to_s} if ARGV[0].to_s == File.read(@tagfile).chomp

@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-require File.join ENV['HOME'],"src/fim","config.rb"
+require_relative "fim.rb"
 require File.join ENV['HOME'],"src/fim","flickr.rb"
 
 exit unless ARGV[0].match(/^[A-Z]/)

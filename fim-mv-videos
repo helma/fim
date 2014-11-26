@@ -1,8 +1,8 @@
 #!/bin/env ruby
 require 'fileutils'
 
-Dir["#{ENV['HOME']}/images/images/**/*.{MOV,THM,mp4}"].each do |movie|
-  dest = movie.sub(/images\/images/,"videos")
+Dir["#{ENV['HOME']}/images/art/images/**/*.{MOV,THM,mp4}"].each do |movie|
+  dest = movie.sub(/images\/art\/images/,"videos")
   FileUtils.mkpath File.dirname(dest)
   FileUtils.mv movie, dest
 end

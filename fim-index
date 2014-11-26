@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-require 'gtk2'
 require 'securerandom'
 require_relative 'index.rb'
 
@@ -10,19 +9,6 @@ require_relative 'index.rb'
 end.process!
 
 @tag = @options[:tag]
-
-@win.signal_connect("key-press-event") do |w,e|
-  case Gdk::Keyval.to_name(e.keyval)
-  when "Return"
-    tags = group_tags(current_image)
-    puts tags.inspect
-    tags.empty? or tags.first == @tag ? `fim-view` : select_tag(tags.first)
-
-  when "equal"
-    exif = MiniExiftool.new current_image
-    `echo "#{current_image}: #{exif.keywords}" | dzen2 -p 2`
-  end
-end
 
 @win.show_all
 Gtk.main

@@ -1,0 +1,15 @@
+#!/usr/bin/env ruby
+require_relative 'fim.rb'
+
+dropbox = "#{ENV["HOME"]}/.dropbox-alfadeo/Dropbox/Photos/ch"
+FileUtils.mkdir_p dropbox
+(@index["original"] & @index["KEEP"]).each do |file|
+  new = File.join dropbox, file.split(/images\//).last.gsub(/\//, "#")
+  unless File.exists? new
+    puts "#{file} -> #{new}"
+    `convert -resize 400x300 -font Courier -pointsize 12 -fill Grey  -draw "text 300,280 '© alfadeo.de'" "#{file}" "#{new}"`
+    exif = MiniExiftool.new file
+    new_exif = MiniExiftool.new new
+    new_exif.save_keywords exif.keywords
+  end
+end

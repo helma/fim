@@ -3,36 +3,34 @@ require_relative "fim.rb"
 
 index = {}
 index['*'] = []
-#@start_time = Time.now
+@start_time = Time.now
 JSON.parse(`zsh -c "exiftool -j -fast2 -CreateDate -Keywords #{@imagedir}/**/"`).each do |t|
-  #@exif_time = Time.now
+  @exif_time = Time.now
   img = t["SourceFile"]
-  if img =~ /jpg$|jpeg$|png$/i
+  if img =~ /jpg$|jpeg$|png$/i #and !img.match(/crop|edit/)
     date = t["CreateDate"]
     date ||= t["SourceFile"].sub(/#{@imagedir}\//,'').sub(/\//,':')
     tags = [t["Keywords"]].flatten
     tags ||= [] 
     tags.collect!{|t| t.to_s}
-    #tags << '_' if (tags & @q_tags).empty?
-    tags << '_' if (tags & @action_tags).empty?
+    tags << 'NEW' if (tags & @action_tags).empty?
     tags.each do |t| 
       index[t.to_s] ||= [] 
       index[t.to_s] << [img,date]
-      index['*'] << [img,date]
     end
   else
-    puts "Not a standard image file: #{img}"
+    puts "#{img} ignored."
   end
 end
 
 index.each_key { |t| index[t] = index[t].sort{|a,b| a.last <=> b.last}.collect{|i| i.first}.uniq }
 
-#@index_time = Time.now
+@index_time = Time.now
 
 File.open(@indexfile, 'w+') { |f| f.puts index.to_yaml }
-#@total_time = Time.now
+@total_time = Time.now
 
-#puts "exif:   #{@exif_time-@start_time}"
-#puts "index:  #{@index_time-@exif_time}"
-#puts "---"
-#puts "total:  #{@total_time-@start_time}"
+puts "exif:   #{@exif_time-@start_time}"
+puts "index:  #{@index_time-@exif_time}"
+puts "---"
+puts "total:  #{@total_time-@start_time}"

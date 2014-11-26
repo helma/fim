@@ -1,0 +1,35 @@
+#!/usr/bin/env ruby
+require_relative 'fim.rb'
+
+@tag = "DELETE"
+@priv_idx = {}
+priv = @index[@tag]
+
+class String
+  def to_delete
+    self.sub /art/, "delete"
+  end
+end
+
+@i = {}
+priv.each_with_index do |f,i|
+  # mv image
+  FileUtils.mkdir_p File.dirname(f.to_delete)
+  FileUtils.mv f, f.to_delete if File.exists? f
+  # mv thumbs
+  t = thumb(i)
+  FileUtils.mkdir_p File.dirname(t.to_delete)
+  FileUtils.mv t, t.to_delete if File.exists? t
+end
+
+@priv_idx[@tag] = @index.delete(@tag).collect{|f| f.to_delete}
+
+@idx = {}
+@index.each do |tag,imgs|
+  @priv_idx[tag] = (priv & imgs).collect{|f| f.to_delete}
+  @idx[tag] = imgs - priv 
+end
+
+@index = @idx
+save_index
+File.open(@indexfile.to_delete,"w+"){|f| f.puts @priv_idx.to_yaml}

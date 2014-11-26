@@ -1,0 +1,18 @@
+#!/usr/bin/env ruby
+require 'pathname'
+require_relative 'fim.rb'
+
+img_root = Pathname.new File.join(ENV["HOME"],"images","art")
+pi_root = Pathname.new "/media/pi/root"
+(@index["original"] & @index["KEEP"]).each do |file|
+  file_path = Pathname.new file
+  pi_path = pi_root + file_path.relative_path_from(img_root)
+  #unless pi_path.exist?
+    pi_path.dirname.mkpath
+    puts pi_path
+    `convert -resize 720x540 "#{file}" "#{pi_path.to_s}"`
+    #exif = MiniExiftool.new file
+    #new_exif = MiniExiftool.new pi_path.to_s
+    #new_exif.save_keywords exif.keywords
+  #end
+end

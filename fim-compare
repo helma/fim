@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
 require 'yaml'
-require 'gtk2'
 require 'mini_exiftool'
 require_relative "fim.rb"
 

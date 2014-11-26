@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-require 'gtk2'
 require_relative "fim.rb"
 
 @win = Gtk::Window.new

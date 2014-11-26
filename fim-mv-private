@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 require_relative 'fim.rb'
 
-@tag = "private"
+@tag = "PRIVATE"
 @priv_idx = {}
 priv = @index[@tag]
 

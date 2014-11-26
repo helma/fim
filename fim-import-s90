@@ -1,20 +1,8 @@
 #!/bin/sh
 
-export SHELL=/usr/bin/bash
-export PATH=/bin:/usr/bin:/home/ch/src/fim/
-set -x 
-xhost local:ch
-export XAUTHORITY=/home/ch/.Xauthority
-export DISPLAY=:0.0
-
-echo `env` > /tmp/udev.tmp
-
-#/usr/bin/pmount $1 $2 && \
-#/usr/bin/rsync -avi --remove-source-files /media/s90/DCIM/ /home/ch/images/images/s90/ && \
-#/home/ch/src/fim/fim-mv-videos && \
-#/home/ch/src/fim/fim-update-index && \
-echo "update thumps:" >> /tmp/udev.tmp
-/home/ch/src/fim/fim-update-thumbs 2 >> /tmp/udev.tmp && \
-echo -n "*" > /home/ch/images/tag && \
-#/usr/bin/pumount /media/s90 && \
-/home/ch/src/fim/fim-index &
+/usr/bin/rsync -avi /media/s90/DCIM/ /home/ch/images/art/images/s90/ 
+/home/ch/src/fim/fim-mv-videos
+/home/ch/src/fim/fim-update-index
+/home/ch/src/fim/fim-update-thumbs
+echo -n "*" > /home/ch/images/tag
+/home/ch/src/fim/fim-index 

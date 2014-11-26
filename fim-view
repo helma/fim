@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
 require 'yaml'
-require 'gtk2'
 require_relative "gui.rb"
 
 ARGV[0] ?  file = ARGV[0] : file = @index[@tag][@current]
@@ -12,6 +11,13 @@ def draw file=@index[@tag][@current]
   ratio = [@win.screen.width/pixbuf.width.to_f, @win.screen.height.to_f/pixbuf.height].min
   pixbuf = pixbuf.scale(pixbuf.width*ratio, pixbuf.height*ratio)
   @image.pixbuf = pixbuf
+end
+
+@win.signal_connect("key-press-event") do |w,e|
+  case Gdk::Keyval.to_name(e.keyval)
+  when "q"
+    quit
+  end
 end
 
 @win.add(@image)

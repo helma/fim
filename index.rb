@@ -6,17 +6,13 @@ require_relative 'gui.rb'
 
 class Gdk::Pixbuf
   def adjust(tw,th)
-    ratio = [tw/self.width, th/self.height].min
+    ratio = 0.98 * [tw/self.width, th/self.height].min
     self.scale(self.width*ratio, self.height*ratio)
   end
 end
 
 def draw
-  if @index[@tag].nil?
-    @tag = "*" 
-    save_tag
-  end
-  @index[@tag].sort unless @tag.match(/^[A-Z]/) 
+  @index[@tag].sort! #unless @tag.match(/^[A-Z]/) and !@action_tags.include?(@tag)
   if @current >= @index[@tag].size
     @current = @index[@tag].size - 1
     save_current
@@ -24,19 +20,24 @@ def draw
   n = @current - @current.modulo(@size)
   n = 0 if n < 0
   @frames.each do |frame|
-    frame.set_state(Gtk::STATE_NORMAL) 
+    frame.modify_bg(Gtk::STATE_NORMAL,BLACK)
     if @index[@tag][n]
       frame.child.pixbuf = Gdk::Pixbuf.new(thumb n).adjust(@tw,@th)
-      frame.set_state(Gtk::STATE_SELECTED) if group? @index[@tag][n]
-      frame.set_state(Gtk::STATE_ACTIVE) if n == @current
+      if @tag.match /^_\w+/ # groups
+        img_tags = @tag_index[@index[@tag][n]]
+        frame.modify_bg(Gtk::STATE_NORMAL,RED) if img_tags.include? "DELETE"
+        frame.modify_bg(Gtk::STATE_NORMAL,GREEN) if img_tags.include? "KEEP"
+        frame.modify_bg(Gtk::STATE_NORMAL,WHITE) if n == @current
+      else
+        frame.modify_bg(Gtk::STATE_NORMAL,GREY) if group? @index[@tag][n]
+        frame.modify_bg(Gtk::STATE_NORMAL,RED) if n == @current
+      end
     else
       frame.child.pixbuf = nil
     end
     n += 1
   end
 end
-
-@win.modify_bg(Gtk::STATE_ACTIVE,Gdk::Color.parse("grey"))
 
 @table = Gtk::Table.new(@rows,@cols,true)
 @frames = []
@@ -46,15 +47,14 @@ end
 @rows.times do |r|
   @cols.times do |c|
     frame = Gtk::Frame.new
-    frame.modify_bg(Gtk::STATE_ACTIVE,Gdk::Color.parse("red"))
-    frame.modify_bg(Gtk::STATE_SELECTED,Gdk::Color.parse("grey"))
-    frame.modify_bg(Gtk::STATE_NORMAL,Gdk::Color.parse("black"))
+    frame.modify_bg(Gtk::STATE_NORMAL,BLACK)
     image = Gtk::Image.new 
     frame.add image
     @table.attach frame, c, c+1, r, r+1
     @frames << frame
   end
 end
+
 @win.add(@table)
 draw
 
@@ -62,6 +62,10 @@ draw
   case Gdk::Keyval.to_name(e.keyval)
   when "Escape"
     @group = nil
+    @index = YAML.load_file(@indexfile)
+    draw
+  when "q"
+    @tag.match(/^_\w+/) ? select_tag(@last_tag) : quit
   when /^j$|Down/
     select @cols
   when /^k$|Up/
@@ -82,24 +86,15 @@ draw
     move -1
   when "L"
     move 1
-  when 'slash'
-    select_tag tag_input
-  when "T"
-    tag = tag_input
-    @index[@tag].each{|i| add_tag tag, i }
-  when "minus"
-    delete_tag tag_input
-  when "BackSpace"
-    add_tag "DELETE"
-  when "grave"
-    @group ||= group_tags(current_image).first
-    @group ||= "_"+SecureRandom.uuid
-    add_tag @group
-    select 1
-  #when 'p'
-    #`fim-print #{current_image}`
-  #when 'e'
-    #`fim-pd`
+  when "Return"
+    tags = group_tags(current_image)
+    if (tags.empty? or tags.first == @tag) 
+      `fim-view`
+      @index = YAML.load_file(@indexfile)
+      draw
+    else
+      select_tag(tags.first)
+    end
   end
 end
 
